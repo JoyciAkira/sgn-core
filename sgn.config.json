@@ -1,0 +1,59 @@
+{
+  "project": {
+    "name": "SGN-POC",
+    "version": "1.0.0",
+    "description": "Secure Gossip Network Proof of Concept",
+    "status": "COMPLETED",
+    "lastUpdated": "2025-01-05"
+  },
+  "demo": {
+    "broadcastInterval": 10000,
+    "networkDelay": 100,
+    "maxNodes": 10,
+    "channels": ["sgn-ku-channel"]
+  },
+  "knowledgeUnits": {
+    "types": [
+      "security-vulnerability",
+      "performance-issue", 
+      "best-practice",
+      "threat-intel"
+    ],
+    "severityLevels": ["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"],
+    "maxConfidence": 1.0,
+    "minConfidence": 0.0
+  },
+  "network": {
+    "defaultPorts": {
+      "sender": 6001,
+      "receiver1": 6002,
+      "receiver2": 6003
+    },
+    "protocols": ["tcp"],
+    "discovery": ["simulation"]
+  },
+  "development": {
+    "phases": [
+      {
+        "name": "Phase 1: Foundation Hardening",
+        "duration": "4 weeks",
+        "status": "PLANNED"
+      },
+      {
+        "name": "Phase 2: Production Architecture", 
+        "duration": "8 weeks",
+        "status": "PLANNED"
+      },
+      {
+        "name": "Phase 3: Advanced Features",
+        "duration": "8 weeks", 
+        "status": "PLANNED"
+      },
+      {
+        "name": "Phase 4: Ecosystem Integration",
+        "duration": "8 weeks",
+        "status": "PLANNED"
+      }
+    ]
+  }
+}

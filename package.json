@@ -1,0 +1,26 @@
+{
+  "name": "sgn-poc",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node start.mjs",
+    "demo": "node src/sgn-poc.mjs",
+    "test": "echo \"Tests will be added in Phase 1\" && exit 0"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@chainsafe/libp2p-gossipsub": "^14.1.1",
+    "@chainsafe/libp2p-noise": "^16.1.4",
+    "@libp2p/bootstrap": "^11.0.46",
+    "@libp2p/identify": "^3.0.38",
+    "@libp2p/mdns": "^11.0.46",
+    "@libp2p/mplex": "^11.0.46",
+    "@libp2p/ping": "^2.0.36",
+    "@libp2p/tcp": "^10.1.18",
+    "libp2p": "^2.9.0"
+  }
+}
