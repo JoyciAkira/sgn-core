@@ -1,6 +1,8 @@
-# 🚀 SGN-POC - Secure Gossip Network Proof of Concept
+# 🚀 SGN-Core - Secure Gossip Network
 
-## ✅ **STATUS: COMPLETATO E FUNZIONANTE**
+**SGN Core**: Protocollo open-source per condividere best practice tra sviluppatori (senza server centrali)
+
+## ✅ **STATUS: PROOF OF CONCEPT COMPLETATO**
 
 Il SGN-POC è stato **completato con successo** e dimostra tutte le funzionalità core del Secure Gossip Network per la condivisione di Knowledge Units in tempo reale.
 
@@ -20,13 +22,17 @@ node src/sgn-poc.mjs
 ## 📁 **Struttura Repository**
 
 ```
-sgn-poc/
+sgn-core/
 ├── src/
 │   └── sgn-poc.mjs          # Demo principale funzionante
-├── docs/                    # Documentazione (futuro)
+├── docs/                    # Documentazione completa
+│   ├── SGN-ROADMAP.md       # Roadmap di sviluppo
+│   └── SGN-TECHNICAL-GUIDE.md # Guida tecnica
 ├── tests/                   # Test suite (futuro)
 ├── start.mjs               # Script di avvio
 ├── package.json            # Dipendenze e script
+├── CONCEPT.md              # Concetto originale
+├── LICENSE                 # Licenza open-source
 ├── README.md               # Questa documentazione
 └── .gitignore              # File da ignorare
 ```

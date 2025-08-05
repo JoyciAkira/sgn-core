@@ -1,12 +1,16 @@
 # Dependencies
 node_modules/
+jspm_packages/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+lerna-debug.log*
 
 # Runtime
 *.log
 .env
+.env.*
+!.env.example
 .env.local
 .env.development.local
 .env.test.local
@@ -14,6 +18,7 @@ yarn-error.log*
 
 # IDE
 .vscode/
+.vscode-test
 .idea/
 *.swp
 *.swo
@@ -34,3 +39,52 @@ logs/
 tmp/
 temp/
 .tmp/
+# Additional Node.js patterns
+logs
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+pids
+*.pid
+*.seed
+*.pid.lock
+lib-cov
+coverage
+*.lcov
+.nyc_output
+.grunt
+bower_components
+.lock-wscript
+build/Release
+web_modules/
+*.tsbuildinfo
+.npm
+.eslintcache
+.stylelintcache
+.node_repl_history
+*.tgz
+.yarn-integrity
+.cache
+.parcel-cache
+.next
+out
+.nuxt
+dist
+.vuepress/dist
+.temp
+.svelte-kit/
+**/.vitepress/dist
+**/.vitepress/cache
+.docusaurus
+.serverless/
+.fusebox/
+.dynamodb/
+.firebase/
+.tern-port
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
