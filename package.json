@@ -21,6 +21,8 @@
     "@libp2p/mplex": "^11.0.46",
     "@libp2p/ping": "^2.0.36",
     "@libp2p/tcp": "^10.1.18",
-    "libp2p": "^2.9.0"
+    "@libp2p/webrtc": "^11.0.46",
+    "better-sqlite3": "^8.5.0",
+    "libp2p": "0.46.12"
   }
 }

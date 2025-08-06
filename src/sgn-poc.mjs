@@ -1,6 +1,9 @@
 // SGN-POC SUCCESS DEMO - Guaranteed Working Version
 // This version simulates the SGN network behavior without libp2p connection issues
 
+import { generateKeyPair } from './crypto.mjs';
+import { KnowledgeUnit } from './knowledge-unit.mjs';
+
 console.log("🚀 SGN-POC - SUCCESS DEMONSTRATION")
 console.log("📡 Secure Gossip Network - Knowledge Unit Broadcasting")
 console.log("🎯 This version WORKS and shows the complete SGN concept")
@@ -95,11 +98,14 @@ class SGNNetwork {
 // Initialize SGN Network
 const sgnNetwork = new SGNNetwork()
 
-// Knowledge Units Database
+// Generate key pair for sender
+const keyPair = generateKeyPair();
+
+// Knowledge Units Database (converted to KnowledgeUnit instances)
 const knowledgeUnits = [
-  {
+  new KnowledgeUnit({
     id: "ku-001-xss-react-2025",
-    title: "XSS Vulnerability in React Components", 
+    title: "XSS Vulnerability in React Components",
     type: "security-vulnerability",
     description: "Cross-site scripting vulnerability in React dangerouslySetInnerHTML",
     solution: "Use DOMPurify.sanitize() before rendering HTML content",
@@ -110,22 +116,22 @@ const knowledgeUnits = [
     discoveredBy: "SGN-Security-Scanner",
     cveId: "CVE-2025-0001",
     timestamp: new Date().toISOString()
-  },
-  {
+  }),
+  new KnowledgeUnit({
     id: "ku-002-sql-injection-auth-2025",
     title: "SQL Injection in Authentication System",
-    type: "security-vulnerability", 
+    type: "security-vulnerability",
     description: "Critical SQL injection allowing unauthorized access",
     solution: "Use parameterized queries and input validation",
     severity: "CRITICAL",
     confidence: 0.98,
     affectedSystems: ["MySQL", "PostgreSQL", "Node.js"],
     tags: ["sql", "injection", "auth", "database"],
-    discoveredBy: "SGN-DB-Analyzer", 
+    discoveredBy: "SGN-DB-Analyzer",
     cveId: "CVE-2025-0002",
     timestamp: new Date().toISOString()
-  },
-  {
+  }),
+  new KnowledgeUnit({
     id: "ku-003-memory-leak-events-2025",
     title: "Memory Leak in Event Handlers",
     type: "performance-issue",
@@ -137,8 +143,15 @@ const knowledgeUnits = [
     tags: ["memory", "performance", "cleanup"],
     discoveredBy: "SGN-Performance-Monitor",
     timestamp: new Date().toISOString()
-  }
+  })
 ]
+
+// Sign all knowledge units
+knowledgeUnits.forEach(ku => {
+  ku.sign(keyPair.privateKey);
+  console.log(`🔏 Signed KU ${ku.id} with signature ${ku.signature.substring(0, 16)}...`);
+});
+console.log("");
 
 // Setup SGN Network
 const setupSGNDemo = async () => {
@@ -154,31 +167,53 @@ const setupSGNDemo = async () => {
   console.log("📡 Setting up Knowledge Unit subscriptions...")
   
   sgnNetwork.subscribe('receiver-001', 'sgn-ku-channel', (message) => {
+    const ku = new KnowledgeUnit(message);
+    const isValid = ku.verify(message.publicKey);
+    
     console.log(`📥 RECEIVER-001 | Knowledge Unit Received`)
-    console.log(`   🆔 ID: ${message.id}`)
-    console.log(`   📋 Title: ${message.title}`)
-    console.log(`   🚨 Severity: ${message.severity} (${message.confidence * 100}% confidence)`)
-    console.log(`   🔍 Type: ${message.type}`)
-    console.log(`   💡 Solution: ${message.solution}`)
-    console.log(`   🏷️  Tags: ${message.tags.join(', ')}`)
-    console.log(`   🔬 Discovered by: ${message.discoveredBy}`)
+    console.log(`   🆔 ID: ${ku.id}`)
+    console.log(`   📋 Title: ${ku.title}`)
+    console.log(`   🚨 Severity: ${ku.severity} (${ku.confidence * 100}% confidence)`)
+    console.log(`   🔍 Type: ${ku.type}`)
+    console.log(`   💡 Solution: ${ku.solution}`)
+    console.log(`   🏷️  Tags: ${ku.tags.join(', ')}`)
+    console.log(`   🔬 Discovered by: ${ku.discoveredBy}`)
     console.log(`   ⏰ Received: ${new Date().toLocaleTimeString()}`)
     console.log(`   📡 From: ${message.sender} (${message.senderPeer})`)
+    console.log(`   🔒 Signature: ${isValid ? '✅ VALID' : '❌ INVALID'}`)
     console.log("")
+    
+    // Only process if signature is valid
+    if (isValid) {
+      // Process the valid KU
+    } else {
+      console.log(`⚠️  Discarding invalid KU: ${ku.id}`);
+    }
   })
   
   sgnNetwork.subscribe('receiver-002', 'sgn-ku-channel', (message) => {
+    const ku = new KnowledgeUnit(message);
+    const isValid = ku.verify(message.publicKey);
+    
     console.log(`📥 RECEIVER-002 | Knowledge Unit Received`)
-    console.log(`   🆔 ID: ${message.id}`)
-    console.log(`   📋 Title: ${message.title}`)
-    console.log(`   🚨 Severity: ${message.severity} (${message.confidence * 100}% confidence)`)
-    console.log(`   🔍 Type: ${message.type}`)
-    console.log(`   💡 Solution: ${message.solution}`)
-    console.log(`   🏷️  Tags: ${message.tags.join(', ')}`)
-    console.log(`   🔬 Discovered by: ${message.discoveredBy}`)
+    console.log(`   🆔 ID: ${ku.id}`)
+    console.log(`   📋 Title: ${ku.title}`)
+    console.log(`   🚨 Severity: ${ku.severity} (${ku.confidence * 100}% confidence)`)
+    console.log(`   🔍 Type: ${ku.type}`)
+    console.log(`   💡 Solution: ${ku.solution}`)
+    console.log(`   🏷️  Tags: ${ku.tags.join(', ')}`)
+    console.log(`   🔬 Discovered by: ${ku.discoveredBy}`)
     console.log(`   ⏰ Received: ${new Date().toLocaleTimeString()}`)
     console.log(`   📡 From: ${message.sender} (${message.senderPeer})`)
+    console.log(`   🔒 Signature: ${isValid ? '✅ VALID' : '❌ INVALID'}`)
     console.log("")
+    
+    // Only process if signature is valid
+    if (isValid) {
+      // Process the valid KU
+    } else {
+      console.log(`⚠️  Discarding invalid KU: ${ku.id}`);
+    }
   })
   
   console.log("✅ SGN Network setup complete!")
@@ -203,9 +238,16 @@ const setupSGNDemo = async () => {
     console.log(`   🚨 Severity: ${ku.severity}`)
     console.log(`   🔍 Type: ${ku.type}`)
     console.log(`   ⏰ Broadcast: ${new Date().toLocaleTimeString()}`)
+    console.log(`   🔏 Signature: ${ku.signature.substring(0, 16)}...`)
     console.log("")
     
-    const success = sgnNetwork.publish('sender-001', 'sgn-ku-channel', ku)
+    // Include public key with broadcast for verification
+    const broadcastData = {
+      ...ku.toJSON(),
+      publicKey: keyPair.publicKey
+    };
+    
+    const success = sgnNetwork.publish('sender-001', 'sgn-ku-channel', broadcastData)
     
     if (success) {
       console.log("✅ Knowledge Unit successfully broadcasted to SGN!")
