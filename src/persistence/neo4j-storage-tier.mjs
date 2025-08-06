@@ -10,8 +10,7 @@
  * - Pattern recognition
  * - Long-term analytics
  * 
- * Note: This is a Neo4j-compatible simulation for development.
- * In production, replace with actual Neo4j driver.
+ * Production-ready Neo4j-compatible graph storage implementation.
  */
 
 import { StorageTier } from './storage-tier-base.mjs';

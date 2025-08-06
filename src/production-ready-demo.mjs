@@ -14,7 +14,7 @@
 import { KnowledgeUnit, KU_TYPES, SEVERITY_LEVELS } from './knowledge-unit.mjs';
 import { generateKeyPair } from './crypto.mjs';
 import { ProductionRedisStorageTier, ProductionNeo4jStorageTier } from './persistence/production-ready-storage.mjs';
-import { SQLiteStorageTier } from './persistence/sqlite-storage-tier-simulated.mjs';
+import { SQLiteStorageTier } from './persistence/sqlite-storage-tier.mjs';
 import { reputationManager } from './reputation-manager.mjs';
 
 console.log("🚀 SGN PRODUCTION-READY DEMO");

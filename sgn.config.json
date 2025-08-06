@@ -30,7 +30,7 @@
       "receiver2": 6003
     },
     "protocols": ["tcp"],
-    "discovery": ["simulation"]
+    "discovery": ["production"]
   },
   "development": {
     "phases": [

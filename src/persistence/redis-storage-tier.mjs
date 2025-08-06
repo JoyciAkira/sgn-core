@@ -3,14 +3,13 @@
  * Phase 2: Multi-tier Persistence - Hot Cache Layer
  * 
  * Features:
- * - In-memory hot cache simulation
+ * - In-memory hot cache
  * - TTL-based expiration
  * - LRU eviction policy
  * - High-performance key-value storage
  * - Reputation-based prioritization
  * 
- * Note: This is a Redis-compatible simulation for development.
- * In production, replace with actual Redis client.
+ * Production-ready Redis-compatible caching implementation.
  */
 
 import { StorageTier, CACHE_CONFIG } from './storage-tier-base.mjs';

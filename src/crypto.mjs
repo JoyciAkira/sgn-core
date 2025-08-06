@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { blake3Hash, blake3Hasher } from './crypto/blake3-hasher.mjs';
 
 /**
  * SGN Enhanced Cryptographic Security Module
@@ -128,22 +129,87 @@ export function verifySignature(message, signatureData, publicKeyPem) {
 }
 
 /**
- * Enhanced hashing function (SHA-256 with future BLAKE3 support)
+ * Enhanced hashing function with BLAKE3 support
  * @param {string|Buffer} data
- * @param {string} algorithm - 'sha256' or 'blake3' (when available)
+ * @param {string} algorithm - 'sha256', 'blake3', or 'auto'
+ * @param {Object} options - Hashing options
  * @returns {string} Hash in hex format
  */
-export function enhancedHash(data, algorithm = 'sha256') {
+export function enhancedHash(data, algorithm = 'auto', options = {}) {
   switch (algorithm) {
     case 'sha256':
       return crypto.createHash('sha256').update(data).digest('hex');
+
     case 'blake3':
-      // TODO: Implement BLAKE3 when dependency is available
-      console.warn('BLAKE3 not available, falling back to SHA-256');
-      return crypto.createHash('sha256').update(data).digest('hex');
+      return blake3Hash(data, options);
+
+    case 'auto':
+      // Use BLAKE3 if available, fallback to SHA-256
+      try {
+        return blake3Hash(data, { ...options, fallbackToSHA256: true });
+      } catch (error) {
+        console.warn('BLAKE3 auto-selection failed, using SHA-256:', error.message);
+        return crypto.createHash('sha256').update(data).digest('hex');
+      }
+
     default:
       throw new Error(`Unsupported hash algorithm: ${algorithm}`);
   }
+}
+
+/**
+ * High-performance batch hashing
+ * @param {Array} dataArray - Array of data to hash
+ * @param {string} algorithm - Hash algorithm
+ * @param {Object} options - Batch options
+ * @returns {Promise<Array>} Array of hash results
+ */
+export async function batchHash(dataArray, algorithm = 'auto', options = {}) {
+  if (algorithm === 'blake3' || algorithm === 'auto') {
+    try {
+      return await blake3Hasher.batchHash(dataArray, {
+        ...options,
+        parallel: options.parallel !== false
+      });
+    } catch (error) {
+      console.warn('BLAKE3 batch hashing failed, falling back to sequential SHA-256:', error.message);
+    }
+  }
+
+  // Fallback to sequential SHA-256 hashing
+  return dataArray.map((data, index) => ({
+    index,
+    hash: crypto.createHash('sha256').update(data).digest('hex'),
+    size: Buffer.isBuffer(data) ? data.length : Buffer.from(data).length
+  }));
+}
+
+/**
+ * Create streaming hasher for large data
+ * @param {string} algorithm - Hash algorithm
+ * @param {Object} options - Streaming options
+ * @returns {Object} Streaming hasher
+ */
+export function createStreamingHasher(algorithm = 'auto', options = {}) {
+  if (algorithm === 'blake3' || algorithm === 'auto') {
+    try {
+      return blake3Hasher.createStreamingHasher(options);
+    } catch (error) {
+      console.warn('BLAKE3 streaming hasher failed, using SHA-256:', error.message);
+    }
+  }
+
+  // Fallback to SHA-256 streaming
+  const hash = crypto.createHash('sha256');
+  return {
+    update: (data) => {
+      hash.update(data);
+      return this;
+    },
+    digest: (encoding = 'hex') => hash.digest(encoding),
+    isStreaming: true,
+    algorithm: 'SHA-256'
+  };
 }
 
 /**

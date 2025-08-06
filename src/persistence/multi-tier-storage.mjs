@@ -17,6 +17,10 @@
 
 import { reputationManager } from '../reputation-manager.mjs';
 import { STORAGE_TIERS, CACHE_CONFIG } from './storage-tier-base.mjs';
+// Use REAL database implementations
+import { RealSQLiteStorageTier } from './sqlite-real-storage.mjs';
+import { RealRedisStorageTier } from './redis-real-storage.mjs';
+import { RealNeo4jStorageTier } from './real-neo4j-storage.mjs';
 
 /**
  * Multi-tier Storage Manager
@@ -47,16 +51,16 @@ export class MultiTierStorage {
     console.log("🏗️ Initializing Multi-tier Storage System...");
     
     try {
-      // Initialize Redis tier (simulated for now)
-      this.tiers.set(STORAGE_TIERS.HOT, new RedisStorageTier());
+      // Initialize REAL Redis Hot Cache Tier
+      this.tiers.set(STORAGE_TIERS.HOT, new RealRedisStorageTier());
       await this.tiers.get(STORAGE_TIERS.HOT).initialize();
-      
-      // Initialize SQLite tier
-      this.tiers.set(STORAGE_TIERS.WARM, new SQLiteStorageTier());
+
+      // Initialize REAL SQLite Warm Storage Tier
+      this.tiers.set(STORAGE_TIERS.WARM, new RealSQLiteStorageTier());
       await this.tiers.get(STORAGE_TIERS.WARM).initialize();
-      
-      // Initialize Neo4j tier (simulated for now)
-      this.tiers.set(STORAGE_TIERS.COLD, new Neo4jStorageTier());
+
+      // Initialize REAL Neo4j Cold Graph Tier
+      this.tiers.set(STORAGE_TIERS.COLD, new RealNeo4jStorageTier());
       await this.tiers.get(STORAGE_TIERS.COLD).initialize();
       
       this.isInitialized = true;
@@ -353,9 +357,8 @@ export class MultiTierStorage {
 }
 
 // Import storage tier implementations
-import { RedisStorageTier } from './redis-storage-tier.mjs';
-import { SQLiteStorageTier } from './sqlite-storage-tier-simulated.mjs';
-import { Neo4jStorageTier } from './neo4j-storage-tier.mjs';
+// Export REAL tier implementations
+export { RealRedisStorageTier, RealSQLiteStorageTier, RealNeo4jStorageTier };
 
-// Export tier implementations
-export { RedisStorageTier, SQLiteStorageTier, Neo4jStorageTier };
+// Singleton instance
+export const multiTierStorage = new MultiTierStorage();
