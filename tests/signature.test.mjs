@@ -1,6 +1,7 @@
 import assert from 'assert';
 import { KnowledgeUnit } from '../src/knowledge-unit.mjs';
 import { generateKeyPair, signMessage, verifySignature } from '../src/crypto.mjs';
+import { reputationManager } from '../src/reputation-manager.mjs';
 
 describe('Digital Signature Verification', () => {
   let keyPair;
@@ -66,10 +67,66 @@ describe('Digital Signature Verification', () => {
     // Create a new KU without signature
     const unsignedKu = KnowledgeUnit.createSample();
     unsignedKu.calculateHash();
-    
+
     // Attempt verification
-    const isValid = unsignedKu.verify(keyPair.publicKey);
-    assert.strictEqual(isValid, false);
+    const verificationResult = unsignedKu.verify(keyPair.publicKey);
+
+    // Handle both legacy boolean and enhanced object returns
+    if (typeof verificationResult === 'boolean') {
+      assert.strictEqual(verificationResult, false);
+    } else {
+      assert.strictEqual(verificationResult.isValid, false);
+      assert.ok(verificationResult.error);
+    }
+  });
+
+  it('should work with enhanced security features', () => {
+    const peerId = 'test-peer-signature';
+
+    // Sign with peer ID for reputation tracking
+    const signatureData = ku.sign(keyPair.privateKey, peerId);
+    assert.ok(signatureData.signature);
+    assert.strictEqual(signatureData.peerId, peerId);
+
+    // Verify with peer ID
+    const verificationResult = ku.verify(keyPair.publicKey, peerId);
+
+    // Should work with both legacy and enhanced modes
+    if (typeof verificationResult === 'boolean') {
+      assert.strictEqual(verificationResult, true);
+    } else {
+      assert.strictEqual(verificationResult.isValid, true);
+    }
+
+    // Check reputation was updated
+    const reputation = reputationManager.getPeerReputation(peerId);
+    assert.ok(reputation);
+    assert(reputation.validSignatures > 0);
+  });
+
+  it('should detect enhanced hash changes', () => {
+    // Sign the KU
+    ku.sign(keyPair.privateKey);
+
+    // Store original hashes
+    const originalHash = ku.hash;
+    const originalFullHash = ku.metadata.fullHash;
+
+    // Modify content
+    ku.title = 'Modified Title for Hash Test';
+    ku.calculateHash();
+
+    // Hashes should be different
+    assert.notStrictEqual(ku.hash, originalHash);
+    assert.notStrictEqual(ku.metadata.fullHash, originalFullHash);
+
+    // Verification should fail
+    const verificationResult = ku.verify(keyPair.publicKey);
+    if (typeof verificationResult === 'boolean') {
+      assert.strictEqual(verificationResult, false);
+    } else {
+      assert.strictEqual(verificationResult.isValid, false);
+    }
   });
 
   it('should correctly sign and verify using direct crypto functions', () => {

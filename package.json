@@ -23,6 +23,9 @@
     "@libp2p/tcp": "^10.1.18",
     "@libp2p/webrtc": "^11.0.46",
     "better-sqlite3": "^8.5.0",
-    "libp2p": "0.46.12"
+    "libp2p": "0.46.12",
+    "redis": "^4.6.12",
+    "neo4j-driver": "^5.15.0",
+    "blake3": "^2.1.7"
   }
 }
