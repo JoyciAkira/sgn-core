@@ -62,6 +62,9 @@ export class RealSGNWebSocketServer {
 
     // Protocol statistics
     this.protocolStats = new SGNProtocolStats();
+
+    // Distributed storage integration
+    this.distributedStorage = options.distributedStorage || null;
   }
   
   /**
@@ -295,6 +298,11 @@ export class RealSGNWebSocketServer {
         lastSeen: Date.now(),
         messageCount: 0
       });
+
+      // Register with distributed storage
+      if (this.distributedStorage) {
+        this.distributedStorage.registerNetworkConnection(peerId, ws);
+      }
       
       console.log(`🤝 Peer handshake completed: ${peerId}`);
 
@@ -315,15 +323,32 @@ export class RealSGNWebSocketServer {
    */
   async handleKURequest(ws, message) {
     console.log(`🔍 KU request from ${ws.peerId || ws.connectionId}: ${JSON.stringify(message.query)}`);
-    
-    // TODO: Integrate with actual KU storage and search
-    // For now, send empty response using protocol
-    const responseMessage = SGNProtocolMessage.kuResponse(
-      message.requestId,
-      [], // Empty results for now
-      this.config.nodeId
-    );
-    this.sendMessage(ws, responseMessage);
+
+    try {
+      // Use distributed storage if available
+      if (this.distributedStorage) {
+        await this.distributedStorage.handleKURequest(
+          message.requestId,
+          message.query,
+          message.requesterPeerId
+        );
+      } else {
+        // Fallback: send empty response
+        const responseMessage = SGNProtocolMessage.kuResponse(
+          message.requestId,
+          [], // Empty results
+          this.config.nodeId
+        );
+        this.sendMessage(ws, responseMessage);
+      }
+    } catch (error) {
+      console.error(`❌ Error handling KU request: ${error.message}`);
+      const errorMessage = SGNProtocolMessage.error(
+        ERROR_CODES.INTERNAL_ERROR,
+        'Failed to process KU request'
+      );
+      this.sendMessage(ws, errorMessage);
+    }
   }
   
   /**
@@ -331,13 +356,26 @@ export class RealSGNWebSocketServer {
    */
   async handleKUResponse(ws, message) {
     console.log(`📦 KU response from ${ws.peerId || ws.connectionId}: ${message.results?.length || 0} results`);
-    
-    // Handle pending request resolution
-    if (message.requestId && this.pendingRequests.has(message.requestId)) {
-      const pending = this.pendingRequests.get(message.requestId);
-      clearTimeout(pending.timeout);
-      pending.resolve(message.results);
-      this.pendingRequests.delete(message.requestId);
+
+    try {
+      // Use distributed storage if available
+      if (this.distributedStorage) {
+        this.distributedStorage.handleKUResponse(
+          message.requestId,
+          message.results,
+          message.responderPeerId
+        );
+      } else {
+        // Fallback: handle pending request resolution
+        if (message.requestId && this.pendingRequests.has(message.requestId)) {
+          const pending = this.pendingRequests.get(message.requestId);
+          clearTimeout(pending.timeout);
+          pending.resolve(message.results);
+          this.pendingRequests.delete(message.requestId);
+        }
+      }
+    } catch (error) {
+      console.error(`❌ Error handling KU response: ${error.message}`);
     }
   }
   
@@ -347,13 +385,22 @@ export class RealSGNWebSocketServer {
   async handleKUBroadcast(ws, message) {
     console.log(`📡 KU broadcast from ${ws.peerId || ws.connectionId}: ${message.ku.title}`);
 
-    // TODO: Store the broadcasted KU
-    // TODO: Forward to other peers (excluding sender)
-
-    // For now, just acknowledge receipt
-    console.log(`   KU ID: ${message.ku.id}`);
-    console.log(`   KU Type: ${message.ku.type}`);
-    console.log(`   KU Severity: ${message.ku.severity}`);
+    try {
+      // Use distributed storage if available
+      if (this.distributedStorage) {
+        await this.distributedStorage.handleKUBroadcast(
+          message.ku,
+          message.broadcasterPeerId
+        );
+      } else {
+        // Fallback: just log the broadcast
+        console.log(`   KU ID: ${message.ku.id}`);
+        console.log(`   KU Type: ${message.ku.type}`);
+        console.log(`   KU Severity: ${message.ku.severity}`);
+      }
+    } catch (error) {
+      console.error(`❌ Error handling KU broadcast: ${error.message}`);
+    }
   }
 
   /**
@@ -384,6 +431,12 @@ export class RealSGNWebSocketServer {
     if (ws.peerId) {
       this.connectedPeers.delete(ws.peerId);
       this.peerInfo.delete(ws.peerId);
+
+      // Unregister from distributed storage
+      if (this.distributedStorage) {
+        this.distributedStorage.unregisterNetworkConnection(ws.peerId);
+      }
+
       console.log(`👋 Peer disconnected: ${ws.peerId}`);
     }
   }
