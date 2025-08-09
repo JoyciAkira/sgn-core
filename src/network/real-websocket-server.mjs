@@ -18,6 +18,9 @@ import {
   MESSAGE_TYPES,
   ERROR_CODES
 } from './sgn-p2p-protocol.mjs';
+import { SignedHandshake } from './handshake-signed.mjs';
+import { DedupSeenSet } from './dedup-seen-set.mjs';
+import { PersistentOutbox } from './outbox-persistent.mjs';
 
 /**
  * Real SGN WebSocket Server
@@ -49,10 +52,12 @@ export class RealSGNWebSocketServer {
     this.pendingRequests = new Map(); // requestId -> { resolve, reject, timeout }
 
 
-    // Outbox for messages when no peers are connected
-    this.outbox = [];
+    // Network robustness components
+    this.signedHandshake = new SignedHandshake();
+    this.dedupSet = new DedupSeenSet();
+    this.persistentOutbox = new PersistentOutbox(options.outboxDbPath || 'data/outbox.db');
     this.outboxFlushInProgress = false;
-    this.outboxRateLimitMs = 25; // simple rate-limit for flush
+    this.outboxRateLimitMs = 25;
 
     // Statistics
     this.stats = {
@@ -87,6 +92,9 @@ export class RealSGNWebSocketServer {
     console.log(`   Host: ${this.config.host}`);
 
     try {
+      // Initialize persistent outbox
+      await this.persistentOutbox.initialize();
+
       // Create HTTP server
       this.httpServer = createServer();
 
@@ -251,6 +259,12 @@ export class RealSGNWebSocketServer {
           break;
 
         case MESSAGE_TYPES.KU_BROADCAST:
+          // Dedup check
+          if (message.ku?.cid && this.dedupSet.hasSeen(message.ku.cid)) {
+            console.log(`🔄 Duplicate KU broadcast ignored: ${message.ku.cid}`);
+            return;
+          }
+          if (message.ku?.cid) this.dedupSet.markSeen(message.ku.cid);
           await this.handleKUBroadcast(ws, message);
           break;
 
@@ -479,20 +493,33 @@ export class RealSGNWebSocketServer {
 
   publishOrEnqueue(message) {
     if (this.connectedPeers.size === 0) {
-      this.outbox.push(message);
-      console.log(`📬 Outbox queued message type=${message.type} (no peers)`);
+      const cid = message.ku?.cid || `msg-${Date.now()}`;
+      this.persistentOutbox.enqueue(cid, message);
+      console.log(`📬 Persistent outbox queued message type=${message.type} cid=${cid} (no peers)`);
       return 0;
     }
     return this.broadcast(message);
   }
 
   async flushOutbox() {
-    if (this.outboxFlushInProgress || this.outbox.length === 0) return;
+    if (this.outboxFlushInProgress) return;
     this.outboxFlushInProgress = true;
     try {
-      while (this.outbox.length && this.connectedPeers.size) {
-        const msg = this.outbox.shift();
-        this.broadcast(msg);
+      const ready = this.persistentOutbox.getReady(20);
+      for (const row of ready) {
+        if (this.connectedPeers.size === 0) break;
+        try {
+          const message = JSON.parse(row.message_json);
+          const sent = this.broadcast(message);
+          if (sent > 0) {
+            this.persistentOutbox.markSent(row.seq);
+            console.log(`📤 Outbox delivered cid=${row.cid} to ${sent} peers`);
+          } else {
+            this.persistentOutbox.markFailed(row.seq, 'no_peers_available');
+          }
+        } catch (err) {
+          this.persistentOutbox.markFailed(row.seq, err.message);
+        }
         await new Promise((r) => setTimeout(r, this.outboxRateLimitMs));
       }
     } finally {

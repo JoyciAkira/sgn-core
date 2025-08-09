@@ -25,6 +25,7 @@
     "@libp2p/ping": "^2.0.36",
     "@libp2p/tcp": "^10.1.18",
     "@multiformats/multiaddr": "^12.1.14",
+    "better-sqlite3": "^12.2.0",
     "blake3": "^2.1.7",
     "libp2p": "0.46.12",
     "multiformats": "^13.4.0",
