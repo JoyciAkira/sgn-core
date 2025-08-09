@@ -7,6 +7,7 @@
 ## 🎯 **Quick Start for Developers**
 
 ### **Current Working Demo**
+
 ```bash
 # Clone and run the working PoC
 git clone <repository>
@@ -16,6 +17,7 @@ npm start
 ```
 
 ### **Project Structure**
+
 ```
 sgn-poc/
 ├── src/
@@ -32,6 +34,7 @@ sgn-poc/
 ## 🏗️ **Architecture Overview**
 
 ### **Current PoC Architecture**
+
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   Sender Node   │    │  Receiver Node  │    │  Receiver Node  │
@@ -55,6 +58,7 @@ sgn-poc/
 ```
 
 ### **Target Production Architecture**
+
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   Desktop App   │    │   Web Client    │    │   Mobile App    │
@@ -81,6 +85,7 @@ sgn-poc/
 ## 💾 **Data Structures**
 
 ### **Knowledge Unit (KU) Schema**
+
 ```typescript
 interface KnowledgeUnit {
   // Identity
@@ -127,6 +132,7 @@ type Severity = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'INFO';
 ```
 
 ### **Network Message Format**
+
 ```typescript
 interface SGNMessage {
   messageId: string;             // Unique message ID
@@ -144,6 +150,7 @@ interface SGNMessage {
 ### **Phase 1: Foundation Hardening**
 
 #### **1. libp2p Integration**
+
 ```javascript
 // Target libp2p configuration for Phase 1
 import { createLibp2p } from 'libp2p'
@@ -187,6 +194,7 @@ const createSGNNode = async (port) => {
 ```
 
 #### **2. Persistence Layer**
+
 ```javascript
 // SQLite-based storage for Phase 1
 import Database from 'better-sqlite3'
@@ -322,6 +330,7 @@ class KUStorage {
 ```
 
 #### **3. Digital Signatures**
+
 ```javascript
 // Ed25519 signatures for KU authenticity
 import { generateKeyPair, sign, verify } from '@noble/ed25519'
@@ -382,6 +391,7 @@ class SGNSecurity {
 ## 🧪 **Testing Strategy**
 
 ### **Unit Tests**
+
 ```javascript
 // Example test structure
 describe('SGN Core', () => {
@@ -412,6 +422,7 @@ describe('SGN Core', () => {
 ```
 
 ### **Integration Tests**
+
 ```javascript
 describe('SGN Network', () => {
   test('should broadcast KU between nodes', async () => {
@@ -443,6 +454,7 @@ describe('SGN Network', () => {
 ## 📊 **Performance Considerations**
 
 ### **Benchmarks (Target Phase 1)**
+
 - **KU Processing**: <10ms per KU
 - **Storage Operations**: <5ms per operation
 - **Network Latency**: <100ms local network
@@ -450,6 +462,7 @@ describe('SGN Network', () => {
 - **CPU Usage**: <5% idle, <20% under load
 
 ### **Optimization Strategies**
+
 1. **Message Batching**: Group multiple KUs in single broadcast
 2. **Compression**: Use gzip for large KU payloads
 3. **Caching**: Redis for frequently accessed KUs
@@ -459,6 +472,7 @@ describe('SGN Network', () => {
 ## 🔒 **Security Considerations**
 
 ### **Phase 1 Security Features**
+
 - [ ] Digital signatures for KU authenticity
 - [ ] Basic rate limiting per peer
 - [ ] Input validation and sanitization
@@ -466,6 +480,7 @@ describe('SGN Network', () => {
 - [ ] Transport encryption (Noise protocol)
 
 ### **Future Security Enhancements**
+
 - [ ] Reputation system for peers
 - [ ] Advanced spam detection
 - [ ] Content-based filtering

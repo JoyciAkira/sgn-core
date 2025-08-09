@@ -6,7 +6,12 @@
   "scripts": {
     "start": "node start.mjs",
     "demo": "node src/sgn-poc.mjs",
-    "test": "echo \"Tests will be added in Phase 1\" && exit 0"
+    "sgn": "node src/cli/sgn.mjs",
+    "test": "node --test ./test/*.mjs",
+    "daemon:start": "SGN_DB=./sgn.db SGN_HTTP_PORT=8787 node src/daemon/daemon.mjs",
+    "daemon:health": "curl -s http://localhost:8787/health",
+    "md:lint": "markdownlint \"**/*.md\" --ignore node_modules --ignore dist --ignore .git",
+    "md:fix": "markdownlint \"**/*.md\" --fix --ignore node_modules --ignore dist --ignore .git"
   },
   "keywords": [],
   "author": "",
@@ -15,6 +20,8 @@
   "dependencies": {
     "@chainsafe/libp2p-gossipsub": "^14.1.1",
     "@chainsafe/libp2p-noise": "^16.1.4",
+    "@ipld/dag-cbor": "^9.2.4",
+    "@ipld/dag-json": "^10.2.5",
     "@libp2p/bootstrap": "^11.0.46",
     "@libp2p/identify": "^3.0.38",
     "@libp2p/kad-dht": "^13.0.46",
@@ -22,12 +29,17 @@
     "@libp2p/mplex": "^11.0.46",
     "@libp2p/ping": "^2.0.36",
     "@libp2p/tcp": "^10.1.18",
-
     "@multiformats/multiaddr": "^12.1.14",
-    "better-sqlite3": "^8.5.0",
+    "better-sqlite3": "^12.2.0",
+    "blake3": "^2.1.7",
     "libp2p": "0.46.12",
-    "redis": "^4.6.12",
+    "multiformats": "^13.4.0",
     "neo4j-driver": "^5.15.0",
-    "blake3": "^2.1.7"
+    "redis": "^4.6.12",
+    "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "fast-check": "^4.2.0",
+    "markdownlint-cli": "^0.45.0"
   }
 }

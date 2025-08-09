@@ -1,0 +1,25 @@
+{
+  "schema_id": "ku.v0",
+  "type": "ku.patch.migration",
+  "content_type": "application/json",
+  "payload": {
+    "title": "React 17→18 migration: ReactDOM.render to createRoot",
+    "description": "Replace ReactDOM.render with createRoot(...).render for React 18.",
+    "patch": "--- a/src/main.jsx\n+++ b/src/main.jsx\n@@\n-import ReactDOM from 'react-dom'\n-ReactDOM.render(<App />, document.getElementById('root'))\n+import { createRoot } from 'react-dom/client'\n+const root = createRoot(document.getElementById('root'))\n+root.render(<App />)",
+    "severity": "MEDIUM",
+    "confidence": 0.92,
+    "affectedSystems": ["frontend", "react-app"]
+  },
+  "parents": [],
+  "sources": [
+    {"url":"https://react.dev/blog/2022/03/08/react-18-upgrade-guide", "hash":""}
+  ],
+  "tests": [
+    {"kind":"unit", "cmd":"npm test", "expected":"pass"}
+  ],
+  "provenance": {"agent_pubkey": null},
+  "signatures": [],
+  "aliases": { "legacy_cid_blake3": "" },
+  "tags": ["react","migration","createRoot"]
+}
+

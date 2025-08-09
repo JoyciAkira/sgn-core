@@ -1,0 +1,18 @@
+{
+  "type": "ku.patch.migration",
+  "schema_id": "ku.v1",
+  "payload": {
+    "title": "Daemon Test",
+    "description": "publish via daemon",
+    "patch": "---",
+    "severity": "LOW",
+    "confidence": 0.9
+  },
+  "parents": [],
+  "sources": [],
+  "tests": [],
+  "provenance": {
+    "agent_pubkey": null
+  },
+  "tags": []
+}

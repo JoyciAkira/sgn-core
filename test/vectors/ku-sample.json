@@ -1,0 +1,18 @@
+{
+  "type": "ku.patch.migration",
+  "schema_id": "ku.v1",
+  "content_type": "application/json",
+  "payload": {
+    "title": "Sample",
+    "description": "Desc",
+    "patch": "--- a\n+++ b\n@@\n-foo\n+bar",
+    "severity": "LOW",
+    "confidence": 0.9
+  },
+  "parents": [],
+  "sources": [],
+  "tests": [],
+  "provenance": { "agent_pubkey": null },
+  "tags": []
+}
+
