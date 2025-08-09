@@ -16,6 +16,7 @@
   "dependencies": {
     "@chainsafe/libp2p-gossipsub": "^14.1.1",
     "@chainsafe/libp2p-noise": "^16.1.4",
+    "@ipld/dag-cbor": "^9.2.4",
     "@libp2p/bootstrap": "^11.0.46",
     "@libp2p/identify": "^3.0.38",
     "@libp2p/kad-dht": "^13.0.46",
@@ -26,7 +27,12 @@
     "@multiformats/multiaddr": "^12.1.14",
     "blake3": "^2.1.7",
     "libp2p": "0.46.12",
+    "multiformats": "^13.4.0",
     "neo4j-driver": "^5.15.0",
-    "redis": "^4.6.12"
+    "redis": "^4.6.12",
+    "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "fast-check": "^4.2.0"
   }
 }

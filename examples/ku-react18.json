@@ -19,6 +19,7 @@
   ],
   "provenance": {"agent_pubkey": null},
   "signatures": [],
+  "aliases": { "legacy_cid_blake3": "" },
   "tags": ["react","migration","createRoot"]
 }
 

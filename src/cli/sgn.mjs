@@ -9,16 +9,61 @@ import { signKU, verifyKU } from '../ku/sign.mjs';
 
 async function main() {
   const [,, cmd, ...args] = process.argv;
-  if (!cmd || ['publish','fetch','verify'].indexOf(cmd) === -1) {
-    console.log('Usage: node src/cli/sgn.mjs <publish|fetch|verify> [options]');
+  if (!cmd) {
+    console.log('Usage: node src/cli/sgn.mjs <publish|fetch|verify|ku> [options]');
     process.exit(1);
+  if (cmd === 'ku') {
+    const sub = args[0];
+    if (sub === 'canonicalize') {
+      const file = args[1];
+      const ku = JSON.parse(readFileSync(file, 'utf8'));
+      const { computeCIDv1, cidToString, encodeForCID } = await import('../ku/cid_v1.mjs');
+      const cid = await computeCIDv1(ku);
+      const bytes = await encodeForCID(ku);
+      console.log(JSON.stringify({ cid: cidToString(cid), bytes_len: bytes.length }, null, 2));
+      process.exit(0);
+    }
+    if (sub === 'sign') {
+      const file = args[1]; const privPath = args[2]; const pubPath = args[3];
+      const ku = JSON.parse(readFileSync(file, 'utf8'));
+      const privPem = readFileSync(privPath, 'utf8');
+      const pubPem = readFileSync(pubPath, 'utf8');
+      const { signKU_v1 } = await import('../ku/sign_v1.mjs');
+      const signed = await signKU_v1(ku, privPem, pubPem);
+      const fs = await import('node:fs/promises');
+      await fs.writeFile(file, JSON.stringify(signed, null, 2));
+      console.log('signed ok');
+      process.exit(0);
+    }
+    if (sub === 'verify') {
+      const file = args[1]; const pubPath = args[2];
+      const ku = JSON.parse(readFileSync(file, 'utf8'));
+      const pubPem = readFileSync(pubPath, 'utf8');
+      const { verifyKU_v1 } = await import('../ku/sign_v1.mjs');
+      const res = await verifyKU_v1(ku, pubPem);
+      console.log(JSON.stringify(res));
+      process.exit(res.ok ? 0 : 1);
+    }
+    if (sub === 'print' && args[1] === '--dag-json') {
+      const file = args[2];
+      const ku = JSON.parse(readFileSync(file, 'utf8'));
+      const { encodeForCID } = await import('../ku/cid_v1.mjs');
+      const bytes = await encodeForCID(ku);
+      const dagJson = (await import('@ipld/dag-json')).encode(JSON.parse(JSON.stringify(ku)));
+      console.log(new TextDecoder().decode(dagJson));
+      process.exit(0);
+    }
+    console.error('Usage: node src/cli/sgn.mjs ku <canonicalize|sign|verify|print --dag-json> <args>');
+    process.exit(2);
+  }
+
   }
   // Optional --db <path> to isolate tests
   const dbIdx = args.indexOf('--db');
   const dbPath = dbIdx !== -1 ? args[dbIdx + 1] : 'data/sgn-ku.db';
   const storage = new RealSQLiteStorageTier({ dbPath, backupPath: dbPath + '.backup' });
   await storage.initialize();
-  
+
   if (cmd === 'publish') {
     const fileIdx = args.indexOf('--file');
     const signIdx = args.indexOf('--sign');
@@ -71,15 +116,15 @@ async function main() {
     console.log('Published KU', cid);
     process.exit(0);
   }
-  
+
   if (cmd === 'fetch') {
     const id = args[0];
-    if (!id) { console.error('fetch <cid>'); process.exit(2);} 
+    if (!id) { console.error('fetch <cid>'); process.exit(2);}
     const ku = await storage.retrieve(id);
     console.log(JSON.stringify(ku, null, 2));
     process.exit(0);
   }
-  
+
   if (cmd === 'verify') {
     const id = args[0];
     const pubIdx = args.indexOf('--pub');

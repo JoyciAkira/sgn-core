@@ -1,7 +1,7 @@
 /**
  * Real WebSocket Server Implementation
  * Phase 3: Network Protocol Implementation
- * 
+ *
  * This creates an ACTUAL WebSocket server that:
  * - Binds to a real port
  * - Accepts real TCP connections
@@ -33,21 +33,27 @@ export class RealSGNWebSocketServer {
       heartbeatInterval: options.heartbeatInterval || 30000,
       connectionTimeout: options.connectionTimeout || 10000
     };
-    
+
     // Server instances
     this.httpServer = null;
     this.wsServer = null;
     this.isRunning = false;
-    
+
     // Connection management
     this.connectedPeers = new Map(); // peerId -> WebSocket
     this.peerInfo = new Map(); // peerId -> peer metadata
     this.connectionAttempts = new Map(); // peerId -> attempt count
-    
+
     // Message handling
     this.messageHandlers = new Map();
     this.pendingRequests = new Map(); // requestId -> { resolve, reject, timeout }
-    
+
+
+    // Outbox for messages when no peers are connected
+    this.outbox = [];
+    this.outboxFlushInProgress = false;
+    this.outboxRateLimitMs = 25; // simple rate-limit for flush
+
     // Statistics
     this.stats = {
       connectionsAccepted: 0,
@@ -66,7 +72,7 @@ export class RealSGNWebSocketServer {
     // Distributed storage integration
     this.distributedStorage = options.distributedStorage || null;
   }
-  
+
   /**
    * Start the WebSocket server
    */
@@ -74,26 +80,26 @@ export class RealSGNWebSocketServer {
     if (this.isRunning) {
       throw new Error('Server is already running');
     }
-    
+
     console.log(`🌐 Starting Real SGN WebSocket Server...`);
     console.log(`   Node ID: ${this.config.nodeId}`);
     console.log(`   Port: ${this.config.port}`);
     console.log(`   Host: ${this.config.host}`);
-    
+
     try {
       // Create HTTP server
       this.httpServer = createServer();
-      
+
       // Create WebSocket server
       this.wsServer = new WebSocketServer({
         server: this.httpServer,
         path: '/sgn',
         maxPayload: 1024 * 1024, // 1MB max message size
       });
-      
+
       // Setup event handlers
       this.setupEventHandlers();
-      
+
       // Start listening
       await new Promise((resolve, reject) => {
         this.httpServer.listen(this.config.port, this.config.host, (error) => {
@@ -104,25 +110,25 @@ export class RealSGNWebSocketServer {
           }
         });
       });
-      
+
       this.isRunning = true;
       this.stats.startTime = Date.now();
-      
+
       // Start heartbeat
       this.startHeartbeat();
-      
+
       console.log(`✅ Real SGN WebSocket Server started successfully`);
       console.log(`   Listening on: ws://${this.config.host}:${this.config.port}/sgn`);
       console.log(`   Max connections: ${this.config.maxConnections}`);
-      
+
       return true;
-      
+
     } catch (error) {
       console.error(`❌ Failed to start WebSocket server: ${error.message}`);
       throw error;
     }
   }
-  
+
   /**
    * Setup WebSocket event handlers
    */
@@ -130,25 +136,25 @@ export class RealSGNWebSocketServer {
     this.wsServer.on('connection', (ws, request) => {
       this.handleNewConnection(ws, request);
     });
-    
+
     this.wsServer.on('error', (error) => {
       console.error(`❌ WebSocket server error: ${error.message}`);
     });
-    
+
     this.wsServer.on('close', () => {
       console.log('🔌 WebSocket server closed');
     });
   }
-  
+
   /**
    * Handle new WebSocket connection
    */
   async handleNewConnection(ws, request) {
     const clientIP = request.socket.remoteAddress;
     const connectionId = `conn-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
+
     console.log(`🔗 New connection from ${clientIP} (${connectionId})`);
-    
+
     // Check connection limits
     if (this.connectedPeers.size >= this.config.maxConnections) {
       console.log(`❌ Connection rejected: max connections reached (${this.config.maxConnections})`);
@@ -156,42 +162,45 @@ export class RealSGNWebSocketServer {
       this.stats.connectionsRejected++;
       return;
     }
-    
+
     // Setup connection metadata
     ws.connectionId = connectionId;
     ws.connectedAt = Date.now();
     ws.lastPing = Date.now();
     ws.isAlive = true;
-    
+
     // Setup message handlers
     ws.on('message', (data) => {
       this.handleMessage(ws, data);
     });
-    
+
     ws.on('close', (code, reason) => {
       this.handleConnectionClose(ws, code, reason);
     });
-    
+
     ws.on('error', (error) => {
       console.error(`❌ WebSocket connection error: ${error.message}`);
     });
-    
+
     ws.on('pong', () => {
       ws.isAlive = true;
       ws.lastPing = Date.now();
     });
-    
+
     // Send welcome message using protocol
     const welcomeMessage = SGNProtocolMessage.welcome(
       this.config.nodeId,
       ['ku-request', 'ku-response', 'peer-discovery', 'ku-broadcast']
     );
     this.sendMessage(ws, welcomeMessage);
-    
+
+    // On new connection, attempt to flush any queued messages
+    this.flushOutbox();
+
     this.stats.connectionsAccepted++;
     console.log(`✅ Connection established: ${connectionId}`);
   }
-  
+
   /**
    * Handle incoming message
    */
@@ -275,19 +284,19 @@ export class RealSGNWebSocketServer {
       this.protocolStats.recordError(ERROR_CODES.INTERNAL_ERROR, error.message);
     }
   }
-  
+
   /**
    * Handle peer handshake
    */
   async handlePeerHandshake(ws, message) {
     try {
       const { peerId, publicKey, signature, timestamp } = message;
-      
+
       // Verify peer identity (simplified)
       if (!peerId || !publicKey) {
         throw new Error('Invalid handshake: missing peer credentials');
       }
-      
+
       // Store peer info
       ws.peerId = peerId;
       this.connectedPeers.set(peerId, ws);
@@ -298,18 +307,20 @@ export class RealSGNWebSocketServer {
         lastSeen: Date.now(),
         messageCount: 0
       });
+      // After successful peer registration, flush queued messages
+      await this.flushOutbox();
 
       // Register with distributed storage
       if (this.distributedStorage) {
         this.distributedStorage.registerNetworkConnection(peerId, ws);
       }
-      
+
       console.log(`🤝 Peer handshake completed: ${peerId}`);
 
       // Send handshake response using protocol
       const ackMessage = SGNProtocolMessage.handshakeAck(this.config.nodeId, 'accepted');
       this.sendMessage(ws, ackMessage);
-      
+
     } catch (error) {
       console.error(`❌ Handshake failed: ${error.message}`);
       const ackMessage = SGNProtocolMessage.handshakeAck(this.config.nodeId, 'rejected', error.message);
@@ -317,7 +328,7 @@ export class RealSGNWebSocketServer {
       this.protocolStats.recordError(ERROR_CODES.AUTHENTICATION_FAILED, error.message);
     }
   }
-  
+
   /**
    * Handle KU request
    */
@@ -350,7 +361,7 @@ export class RealSGNWebSocketServer {
       this.sendMessage(ws, errorMessage);
     }
   }
-  
+
   /**
    * Handle KU response
    */
@@ -378,7 +389,7 @@ export class RealSGNWebSocketServer {
       console.error(`❌ Error handling KU response: ${error.message}`);
     }
   }
-  
+
   /**
    * Handle KU broadcast
    */
@@ -420,27 +431,32 @@ export class RealSGNWebSocketServer {
     const peerListMessage = SGNProtocolMessage.peerList(knownPeers, this.config.nodeId);
     this.sendMessage(ws, peerListMessage);
   }
-  
+
   /**
    * Handle connection close
    */
   handleConnectionClose(ws, code, reason) {
     console.log(`🔌 Connection closed: ${ws.connectionId} (code: ${code}, reason: ${reason})`);
-    
+
     // Clean up peer info
     if (ws.peerId) {
       this.connectedPeers.delete(ws.peerId);
       this.peerInfo.delete(ws.peerId);
 
       // Unregister from distributed storage
+
       if (this.distributedStorage) {
         this.distributedStorage.unregisterNetworkConnection(ws.peerId);
       }
 
       console.log(`👋 Peer disconnected: ${ws.peerId}`);
+
+    // Try to flush outbox in case peers remain
+    this.flushOutbox();
+
     }
   }
-  
+
   /**
    * Send message to WebSocket
    */
@@ -451,10 +467,7 @@ export class RealSGNWebSocketServer {
         ws.send(data);
         this.stats.messagesSent++;
         this.stats.bytesSent += data.length;
-
-        // Record protocol statistics
         this.protocolStats.recordSent(message, data.length);
-
         return true;
       }
       return false;
@@ -463,13 +476,36 @@ export class RealSGNWebSocketServer {
       return false;
     }
   }
-  
+
+  publishOrEnqueue(message) {
+    if (this.connectedPeers.size === 0) {
+      this.outbox.push(message);
+      console.log(`📬 Outbox queued message type=${message.type} (no peers)`);
+      return 0;
+    }
+    return this.broadcast(message);
+  }
+
+  async flushOutbox() {
+    if (this.outboxFlushInProgress || this.outbox.length === 0) return;
+    this.outboxFlushInProgress = true;
+    try {
+      while (this.outbox.length && this.connectedPeers.size) {
+        const msg = this.outbox.shift();
+        this.broadcast(msg);
+        await new Promise((r) => setTimeout(r, this.outboxRateLimitMs));
+      }
+    } finally {
+      this.outboxFlushInProgress = false;
+    }
+  }
+
   /**
    * Broadcast message to all connected peers
    */
   broadcast(message, excludePeerId = null) {
     let sentCount = 0;
-    
+
     for (const [peerId, ws] of this.connectedPeers.entries()) {
       if (peerId !== excludePeerId) {
         if (this.sendMessage(ws, message)) {
@@ -477,11 +513,11 @@ export class RealSGNWebSocketServer {
         }
       }
     }
-    
+
     console.log(`📡 Broadcast sent to ${sentCount} peers`);
     return sentCount;
   }
-  
+
   /**
    * Start heartbeat to check connection health
    */
@@ -500,7 +536,7 @@ export class RealSGNWebSocketServer {
       }
     }, this.config.heartbeatInterval);
   }
-  
+
   /**
    * Get server statistics
    */
@@ -520,7 +556,7 @@ export class RealSGNWebSocketServer {
       }
     };
   }
-  
+
   /**
    * Stop the WebSocket server
    */
@@ -528,25 +564,25 @@ export class RealSGNWebSocketServer {
     if (!this.isRunning) {
       return;
     }
-    
+
     console.log('🛑 Stopping SGN WebSocket Server...');
-    
+
     // Close all connections
     for (const ws of this.connectedPeers.values()) {
       ws.close(1001, 'Server shutting down');
     }
-    
+
     // Close servers
     if (this.wsServer) {
       this.wsServer.close();
     }
-    
+
     if (this.httpServer) {
       await new Promise((resolve) => {
         this.httpServer.close(resolve);
       });
     }
-    
+
     this.isRunning = false;
     console.log('✅ SGN WebSocket Server stopped');
   }
