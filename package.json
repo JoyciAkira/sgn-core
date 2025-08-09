@@ -10,8 +10,8 @@
     "test": "node --test ./test/*.mjs",
     "daemon:start": "SGN_DB=./sgn.db SGN_HTTP_PORT=8787 node src/daemon/daemon.mjs",
     "daemon:health": "curl -s http://localhost:8787/health",
-    "md:lint": "markdownlint \"**/*.md\" --ignore node_modules --ignore dist --ignore .git",
-    "md:fix": "markdownlint \"**/*.md\" --fix --ignore node_modules --ignore dist --ignore .git"
+    "md:lint": "npx markdownlint \"**/*.md\" --ignore node_modules --ignore dist --ignore .git --ignore \"**/pkg/**\" --ignore \"**/generated/**\"",
+    "md:fix": "npx markdownlint \"**/*.md\" --fix --ignore node_modules --ignore dist --ignore .git --ignore \"**/pkg/**\" --ignore \"**/generated/**\""
   },
   "keywords": [],
   "author": "",
@@ -41,5 +41,6 @@
   "devDependencies": {
     "fast-check": "^4.2.0",
     "markdownlint-cli": "^0.45.0"
+  }
   }
 }

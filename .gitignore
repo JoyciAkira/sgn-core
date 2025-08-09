@@ -88,3 +88,7 @@ dist
 !.yarn/versions
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+
+# Trust policy (example tracked, real file ignored)
+trust.json
