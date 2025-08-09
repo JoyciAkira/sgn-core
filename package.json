@@ -11,7 +11,8 @@
     "daemon:start": "SGN_DB=./sgn.db SGN_HTTP_PORT=8787 node src/daemon/daemon.mjs",
     "daemon:health": "curl -s http://localhost:8787/health",
     "md:lint": "npx markdownlint \"**/*.md\" --ignore node_modules --ignore dist --ignore .git --ignore \"**/pkg/**\" --ignore \"**/generated/**\"",
-    "md:fix": "npx markdownlint \"**/*.md\" --fix --ignore node_modules --ignore dist --ignore .git --ignore \"**/pkg/**\" --ignore \"**/generated/**\""
+    "md:fix": "npx markdownlint \"**/*.md\" --fix --ignore node_modules --ignore dist --ignore .git --ignore \"**/pkg/**\" --ignore \"**/generated/**\"",
+    "smoke:health": "curl -sf http://localhost:8787/health"
   },
   "keywords": [],
   "author": "",
