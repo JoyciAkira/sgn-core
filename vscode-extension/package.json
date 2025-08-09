@@ -1,0 +1,38 @@
+{
+  "name": "sgn-vscode",
+  "displayName": "SGN",
+  "version": "0.0.1",
+  "engines": { "vscode": "^1.80.0" },
+  "activationEvents": [
+    "onCommand:sgn.publishActiveFileAsKU",
+    "onCommand:sgn.verifyActiveFileKU",
+    "onCommand:sgn.openDaemonHealth"
+  ],
+  "contributes": {
+    "configuration": {
+      "type": "object",
+      "title": "SGN",
+      "properties": {
+        "sgn.daemonUrl": {
+          "type": "string",
+          "default": "http://localhost:8787",
+          "description": "URL of the SGN Daemon"
+        }
+      }
+    },
+    "commands": [
+      { "command": "sgn.publishActiveFileAsKU", "title": "SGN: Publish Active KU" },
+      { "command": "sgn.verifyActiveFileKU", "title": "SGN: Verify Active KU" },
+      { "command": "sgn.openDaemonHealth", "title": "SGN: Open Daemon Health" }
+    ]
+  },
+  "main": "./dist/extension.js",
+  "scripts": {
+    "compile": "tsc -p ."
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4",
+    "@types/vscode": "^1.80.0"
+  }
+}
+

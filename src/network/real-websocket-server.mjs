@@ -41,6 +41,7 @@ export class RealSGNWebSocketServer {
     this.httpServer = null;
     this.wsServer = null;
     this.isRunning = false;
+    this.heartbeatTimer = null;
 
     // Connection management
     this.connectedPeers = new Map(); // peerId -> WebSocket
@@ -549,7 +550,8 @@ export class RealSGNWebSocketServer {
    * Start heartbeat to check connection health
    */
   startHeartbeat() {
-    setInterval(() => {
+    if (this.heartbeatTimer) clearInterval(this.heartbeatTimer);
+    this.heartbeatTimer = setInterval(() => {
       for (const [peerId, ws] of this.connectedPeers.entries()) {
         if (!ws.isAlive) {
           console.log(`💔 Terminating dead connection: ${peerId}`);
@@ -593,6 +595,12 @@ export class RealSGNWebSocketServer {
     }
 
     console.log('🛑 Stopping SGN WebSocket Server...');
+
+    // Stop heartbeat
+    if (this.heartbeatTimer) {
+      clearInterval(this.heartbeatTimer);
+      this.heartbeatTimer = null;
+    }
 
     // Close all connections
     for (const ws of this.connectedPeers.values()) {
