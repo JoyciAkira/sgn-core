@@ -42,6 +42,6 @@ This map links major tasks to their branches/PRs and how to run/verify them loca
   - Run: Bench 10k KUs (script TBD)
 
 Notes
+
 - Licenses: permissive only (MIT/Apache) or built-in
 - Tests: always real (filesystem, network, DB), no mocks/simulations
-

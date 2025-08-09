@@ -1,6 +1,7 @@
 # AugmentCode TODO (execution guide)
 
 ## Done / In progress
+
 - [x] Feature PR #1: KU schema v0 + CLI (branch: feature/ku-schema-cli)
   - [x] src/ku/schema.mjs, cid.mjs, sign.mjs (Node crypto)
   - [x] CLI publish/fetch/verify + example KU
@@ -20,6 +21,7 @@
   - [ ] Docs update: migration notes + examples
 
 ## Next up
+
 - [ ] Feature PR B: Network robustness (Outbox persisted + Handshake signed + Dedup + ACK/Backoff)
   - [ ] Handshake challenge/response (nonce TTL 2–5 min) with Ed25519 verify
   - [ ] Dedup seen-set (LRU/Bloom) by CID; anti-replay window
@@ -43,6 +45,7 @@
   - [ ] Benchmark suite (20–30 migrazioni: React, lodash, Webpack→Vite, Express) con KPI: MTTR↓, pass-rate↑
 
 ## How to run (quick)
+
 - Tests: `npm test`
 - CLI (new):
   - `npm run sgn -- ku canonicalize examples/ku-react18.json`
@@ -52,5 +55,6 @@
 - Network E2E (WIP): `node --test ./test/outbox-handshake-e2e.test.mjs`
 
 Notes:
+
 - Licenze: solo permissive (MIT/Apache-2.0) o built-in
 - Test: sempre reali (filesystem, rete, DB), no mock/simulazioni

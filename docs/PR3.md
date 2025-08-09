@@ -2,7 +2,7 @@
 
 ## Sintesi
 
-- Daemon HTTP/JSON-RPC: `/publish`, `/verify`, `/ku/:cid`, `/health`
+- Daemon HTTP/JSON-RPC: `POST /publish`, `POST /verify`, `GET /ku/:cid?view=dag-json|json`, `GET /health`
 - Reuse outbox SQLite (WAL), log JSONL
 - Integrazione DAG-CBOR/CIDv1 + verify Ed25519 v1 + Trust v0
 - VSCode alpha (Publish / Verify / Health)
@@ -10,7 +10,14 @@
 ## Come provare
 
 ```bash
-npm i better-sqlite3
+npm i
+npm run daemon:start
+npm run daemon:health
+```
+
+Oppure avvio manuale:
+
+```bash
 SGN_DB=./sgn.db SGN_HTTP_PORT=8787 node sgn-poc/src/daemon/daemon.mjs
 curl -s http://localhost:8787/health
 ```
@@ -18,11 +25,12 @@ curl -s http://localhost:8787/health
 ## Acceptance
 
 - p50 locale <200 ms sulle rotte base
-- `/publish` persiste KU + enqueue → outbox
-- `/verify` rispetta trust.json (warn/enforce)
+- `POST /publish` persiste KU + enqueue → outbox (con `verify=true` applica Trust enforce/warn)
+- `POST /verify` rispetta trust.json (mode enforce/warn) e ritorna sempre 200 con `trusted` boolean
 - VSCode: comandi funzionanti su daemon locale
 
 ## CLI: sgn daemon start|health (snippet minimal)
+
 Aggiungi in `src/cli/sgn.mjs`:
 
 ```js
@@ -55,7 +63,8 @@ Script suggeriti in `package.json` (root):
 ```
 
 ## Esempio trust.json + test rapido
-`trust.json`
+
+`trust.json`:
 
 ```json
 {
@@ -89,6 +98,5 @@ curl -s -X POST http://localhost:8787/verify \
 
 Prova con chiave NON allowlist (o mode:"warn"):
 
-- In enforce: atteso 403 su `/publish?verify=true` o `trusted:false` su `/verify`.
+- In enforce: atteso 403 su `POST /publish?verify=true` o `trusted:false` su `POST /verify`.
 - In warn: `ok:true`, `trusted:false`, log con livello WARNING.
-
