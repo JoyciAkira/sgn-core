@@ -7,7 +7,7 @@
     "start": "node start.mjs",
     "demo": "node src/sgn-poc.mjs",
     "sgn": "node src/cli/sgn.mjs",
-    "test": "node --test"
+    "test": "node --test ./test/*.mjs"
   },
   "keywords": [],
   "author": "",
