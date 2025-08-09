@@ -13,7 +13,10 @@ async function main() {
     console.log('Usage: node src/cli/sgn.mjs <publish|fetch|verify> [options]');
     process.exit(1);
   }
-  const storage = new RealSQLiteStorageTier({ dbPath: 'data/sgn-ku.db', backupPath: 'data/sgn-ku.backup.db' });
+  // Optional --db <path> to isolate tests
+  const dbIdx = args.indexOf('--db');
+  const dbPath = dbIdx !== -1 ? args[dbIdx + 1] : 'data/sgn-ku.db';
+  const storage = new RealSQLiteStorageTier({ dbPath, backupPath: dbPath + '.backup' });
   await storage.initialize();
   
   if (cmd === 'publish') {
