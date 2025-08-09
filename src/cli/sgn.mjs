@@ -10,8 +10,10 @@ import { signKU, verifyKU } from '../ku/sign.mjs';
 async function main() {
   const [,, cmd, ...args] = process.argv;
   if (!cmd) {
-    console.log('Usage: node src/cli/sgn.mjs <publish|fetch|verify|ku> [options]');
+    console.log('Usage: node src/cli/sgn.mjs <publish|fetch|verify|ku|daemon> [options]');
     process.exit(1);
+  }
+
   if (cmd === 'ku') {
     const sub = args[0];
     if (sub === 'canonicalize') {
@@ -57,7 +59,35 @@ async function main() {
     process.exit(2);
   }
 
+  if (cmd === 'daemon') {
+    const sub = args[0];
+    if (sub === 'start') {
+      const { spawn } = await import('node:child_process');
+      const { fileURLToPath } = await import('node:url');
+      const { dirname, join } = await import('node:path');
+      const __filename = fileURLToPath(import.meta.url);
+      const __dirname = dirname(__filename);
+      const port = process.env.SGN_HTTP_PORT || '8787';
+      const db = process.env.SGN_DB || './sgn.db';
+      const daemonPath = join(__dirname, '../daemon/daemon.mjs');
+      const p = spawn(process.execPath, [daemonPath], {
+        env: { ...process.env, SGN_HTTP_PORT: port, SGN_DB: db }, stdio: 'inherit'
+      });
+      p.on('exit', (code)=>process.exit(code ?? 0));
+      return;
+    }
+    if (sub === 'health') {
+      const http = await import('node:http');
+      const req = http.request({ host:'localhost', port:process.env.SGN_HTTP_PORT||'8787', path:'/health' }, res=>{
+        let b=''; res.on('data',c=>b+=c); res.on('end',()=>{ console.log(b); process.exit(0) });
+      });
+      req.on('error', (e)=>{ console.error(String(e)); process.exit(1) }); req.end();
+      return;
+    }
+    console.error('Usage: node src/cli/sgn.mjs daemon <start|health>');
+    process.exit(2);
   }
+
   // Optional --db <path> to isolate tests
   const dbIdx = args.indexOf('--db');
   const dbPath = dbIdx !== -1 ? args[dbIdx + 1] : 'data/sgn-ku.db';

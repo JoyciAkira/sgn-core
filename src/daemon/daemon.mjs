@@ -73,6 +73,12 @@ async function handlePublish(req, res) {
       if (!pub_pem) return sendJson(res, 400, { error: 'missing_pub_pem' });
       const v = await verifyKU_v1(ku, pub_pem);
       if (!v.ok) return sendJson(res, 400, { error: 'verify_fail', reason: v.reason });
+      const trust = await loadTrust();
+      let trusted = false;
+      if (ku.sig?.key_id) trusted = trust.allow.has(ku.sig.key_id);
+      if (trust.mode === 'enforce' && !trusted) {
+        return sendJson(res, 403, { error: 'untrusted_key' });
+      }
     }
 
     // Persist raw KU to filesystem
@@ -118,7 +124,7 @@ async function handleVerify(req, res) {
     const v = await verifyKU_v1(ku, pub_pem);
     let trusted = false;
     if (v.ok && ku.sig?.key_id) trusted = trust.allow.has(ku.sig.key_id);
-    if (trust.mode === 'enforce' && v.ok && !trusted) return sendJson(res, 403, { ok: false, reason: 'not_trusted' });
+    // In enforce mode: do not block /verify; report trusted=false with 200
     return sendJson(res, 200, { ok: v.ok, reason: v.reason, trusted });
   } catch (e) {
     return sendJson(res, 500, { ok: false, reason: 'server_error' });

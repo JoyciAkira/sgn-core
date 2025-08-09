@@ -1,0 +1,88 @@
+{
+  "knowledge_units": [
+    [
+      "bafyreieb77qvjphvf7abdfodtemkpx4vy42p7pxjctc7e6f4z6dzgd3fti",
+      {
+        "id": "bafyreieb77qvjphvf7abdfodtemkpx4vy42p7pxjctc7e6f4z6dzgd3fti",
+        "title": "Daemon Test",
+        "type": "ku.patch.migration",
+        "description": "publish via daemon",
+        "solution": "---",
+        "severity": "LOW",
+        "confidence": 0.9,
+        "tags": "[]",
+        "affected_systems": "[]",
+        "discovered_by": null,
+        "origin_peer": null,
+        "hash": "bafyreieb77qvjphvf7abdfodtemkpx4vy42p7pxjctc7e6f4z6dzgd3fti",
+        "signature": null,
+        "created_at": 1754760432345,
+        "updated_at": 1754760432345,
+        "access_count": 0,
+        "last_accessed": null,
+        "reputation_score": 0.5
+      }
+    ]
+  ],
+  "ku_metadata": [
+    [
+      "bafyreieb77qvjphvf7abdfodtemkpx4vy42p7pxjctc7e6f4z6dzgd3fti",
+      {
+        "ku_id": "bafyreieb77qvjphvf7abdfodtemkpx4vy42p7pxjctc7e6f4z6dzgd3fti",
+        "tier": "warm",
+        "priority": 78,
+        "ttl": 86400000,
+        "created_at": 1754760432345,
+        "accessed_at": 1754760432345
+      }
+    ]
+  ],
+  "ku_indexes": [
+    [
+      "type_index",
+      [
+        [
+          "ku.patch.migration",
+          [
+            "bafyreieb77qvjphvf7abdfodtemkpx4vy42p7pxjctc7e6f4z6dzgd3fti"
+          ]
+        ]
+      ]
+    ],
+    [
+      "severity_index",
+      [
+        [
+          "LOW",
+          [
+            "bafyreieb77qvjphvf7abdfodtemkpx4vy42p7pxjctc7e6f4z6dzgd3fti"
+          ]
+        ]
+      ]
+    ],
+    [
+      "confidence_index",
+      [
+        [
+          0.9,
+          [
+            "bafyreieb77qvjphvf7abdfodtemkpx4vy42p7pxjctc7e6f4z6dzgd3fti"
+          ]
+        ]
+      ]
+    ],
+    [
+      "created_at_index",
+      []
+    ],
+    [
+      "tags_index",
+      []
+    ]
+  ],
+  "metadata": {
+    "version": "1.0",
+    "lastUpdate": 1754760433217,
+    "totalRecords": 1
+  }
+}

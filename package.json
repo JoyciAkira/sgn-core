@@ -7,7 +7,9 @@
     "start": "node start.mjs",
     "demo": "node src/sgn-poc.mjs",
     "sgn": "node src/cli/sgn.mjs",
-    "test": "node --test ./test/*.mjs"
+    "test": "node --test ./test/*.mjs",
+    "daemon:start": "SGN_DB=./sgn.db SGN_HTTP_PORT=8787 node src/daemon/daemon.mjs",
+    "daemon:health": "curl -s http://localhost:8787/health"
   },
   "keywords": [],
   "author": "",
