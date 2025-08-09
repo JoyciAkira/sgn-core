@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node start.mjs",
     "demo": "node src/sgn-poc.mjs",
-    "test": "echo \"Tests will be added in Phase 1\" && exit 0"
+    "sgn": "node src/cli/sgn.mjs",
+    "test": "node --test ./test/*.mjs"
   },
   "keywords": [],
   "author": "",
@@ -22,12 +23,10 @@
     "@libp2p/mplex": "^11.0.46",
     "@libp2p/ping": "^2.0.36",
     "@libp2p/tcp": "^10.1.18",
-
     "@multiformats/multiaddr": "^12.1.14",
-    "better-sqlite3": "^8.5.0",
+    "blake3": "^2.1.7",
     "libp2p": "0.46.12",
-    "redis": "^4.6.12",
     "neo4j-driver": "^5.15.0",
-    "blake3": "^2.1.7"
+    "redis": "^4.6.12"
   }
 }
