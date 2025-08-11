@@ -7,15 +7,17 @@
  * - POST /verify  { ku, pub_pem } -> { ok, reason?, trusted }
  */
 import http from 'node:http';
-import { readFile, writeFile, mkdir, stat } from 'node:fs/promises';
+import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as dagJson from '@ipld/dag-json';
 import { RealSQLiteStorageTier } from '../persistence/sqlite-real-storage.mjs';
-import { computeCIDv1, cidToString, encodeForCID } from '../ku/cid_v1.mjs';
+import { computeCIDv1, cidToString } from '../ku/cid_v1.mjs';
 import { verifyKU_v1 } from '../ku/sign_v1.mjs';
 import { PersistentOutbox } from '../network/outbox-persistent.mjs';
+import { metrics } from './metrics.mjs';
+import { createEventsServer } from './events.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -28,6 +30,7 @@ const TRUST_PATH = process.env.SGN_TRUST_PATH || join(__dirname, '../../trust.js
 
 const storage = new RealSQLiteStorageTier({ dbPath: DB_PATH, backupPath: DB_PATH + '.backup' });
 const outbox = new PersistentOutbox(join(__dirname, '../../data/outbox.db'));
+let eventsBroadcastKU = null;
 
 async function ensureDirs() {
   for (const d of [dirname(DB_PATH), KUS_DIR, LOGS_DIR]) {
@@ -58,10 +61,26 @@ function sendJson(res, code, obj) {
   res.end(body);
 }
 
+function sendText(res, code, text, headers = {}) {
+  const body = Buffer.from(text);
+  res.writeHead(code, { 'content-type': 'text/plain; charset=utf-8', 'content-length': body.length, ...headers });
+  res.end(body);
+}
+
+function readBody(req) {
+  return new Promise((resolve, reject) => {
+    let buf = Buffer.alloc(0);
+    req.on('data', (chunk) => { buf = Buffer.concat([buf, chunk]); });
+    req.on('end', () => resolve(buf));
+    req.on('error', reject);
+  });
+}
+
 async function handlePublish(req, res) {
   let buf = Buffer.alloc(0);
   for await (const chunk of req) buf = Buffer.concat([buf, chunk]);
   try {
+    const t0 = Date.now();
     const { ku, verify, pub_pem } = JSON.parse(buf.toString('utf8')) || {};
     if (!ku || typeof ku !== 'object') return sendJson(res, 400, { error: 'invalid_ku' });
 
@@ -105,7 +124,16 @@ async function handlePublish(req, res) {
     // Enqueue broadcast
     outbox.enqueue(cid, { type: 'ku-broadcast', ku, timestamp: Date.now() });
 
-    await appendLog({ evt: 'publish', cid });
+    const lat_ms = Date.now() - t0;
+    metrics.http.publish.observe(lat_ms);
+    metrics.outbox.ready = outbox.getReady(1).length;
+    await appendLog({ evt: 'publish', cid, lat_ms });
+
+    // Broadcast to /events clients
+    if (eventsBroadcastKU) {
+      try { eventsBroadcastKU({ cid }); } catch {}
+    }
+
     return sendJson(res, 200, { cid, stored: true, enqueued: true });
   } catch (e) {
     await appendLog({ evt: 'publish_error', error: e.message });
@@ -117,6 +145,7 @@ async function handleVerify(req, res) {
   let buf = Buffer.alloc(0);
   for await (const chunk of req) buf = Buffer.concat([buf, chunk]);
   try {
+    const t0 = Date.now();
     const { ku, pub_pem } = JSON.parse(buf.toString('utf8')) || {};
     if (!ku || !pub_pem) return sendJson(res, 400, { ok: false, reason: 'missing_params' });
 
@@ -124,6 +153,8 @@ async function handleVerify(req, res) {
     const v = await verifyKU_v1(ku, pub_pem);
     let trusted = false;
     if (v.ok && ku.sig?.key_id) trusted = trust.allow.has(ku.sig.key_id);
+    const lat_ms = Date.now() - t0;
+    metrics.http.verify.observe(lat_ms);
     // In enforce mode: do not block /verify; report trusted=false with 200
     return sendJson(res, 200, { ok: v.ok, reason: v.reason, trusted });
   } catch (e) {
@@ -190,23 +221,38 @@ async function main() {
       if (req.method === 'GET' && url.pathname === '/health') return handleHealth(req, res);
       if (req.method === 'POST' && url.pathname === '/publish') return handlePublish(req, res);
       if (req.method === 'POST' && url.pathname === '/verify') return handleVerify(req, res);
+      if (req.method === 'GET' && url.pathname === '/metrics') {
+        const fmt = url.searchParams.get('format');
+        metrics.outbox.ready = outbox.getReady(1).length;
+        if (fmt === 'prom') {
+          return sendText(res, 200, metrics.toProm(), { 'content-type': 'text/plain; version=0.0.4' });
+
+        }
+        return sendJson(res, 200, metrics.snapshot());
+      }
       if (req.method === 'GET' && url.pathname.startsWith('/ku/')) {
         const cid = decodeURIComponent(url.pathname.substring(4));
         const view = url.searchParams.get('view') || 'json';
         return handleGetKU(req, res, cid, view);
       }
+
       return sendJson(res, 404, { error: 'not_found' });
+
     } catch (e) {
       return sendJson(res, 500, { error: 'server_error' });
     }
   });
 
+  // attach WS /events
+  const { broadcastKU } = createEventsServer({ server, path: '/events' });
+  eventsBroadcastKU = broadcastKU;
+
   server.listen(PORT, () => {
     console.log(`SGN Daemon listening on http://localhost:${PORT}`);
+    appendLog({ evt: 'daemon_listen', port: PORT });
   });
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch(err => { console.error(err); process.exit(1); });
 }
-

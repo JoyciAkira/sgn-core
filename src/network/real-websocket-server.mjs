@@ -21,6 +21,7 @@ import {
 import { SignedHandshake } from './handshake-signed.mjs';
 import { DedupSeenSet } from './dedup-seen-set.mjs';
 import { PersistentOutbox } from './outbox-persistent.mjs';
+import { metrics } from '../daemon/metrics.mjs';
 
 /**
  * Real SGN WebSocket Server
@@ -97,7 +98,22 @@ export class RealSGNWebSocketServer {
       await this.persistentOutbox.initialize();
 
       // Create HTTP server
-      this.httpServer = createServer();
+      this.httpServer = createServer((req, res) => {
+        try {
+          const u = new URL(req.url, `http://${req.headers.host}`);
+          if (req.method === 'GET' && u.pathname === '/metrics') {
+            const body = metrics.toProm();
+            res.writeHead(200, { 'content-type': 'text/plain; version=0.0.4' });
+            res.end(body);
+            return;
+          }
+          res.writeHead(404);
+          res.end('not_found');
+        } catch (e) {
+          res.writeHead(500);
+          res.end('server_error');
+        }
+      });
 
       // Create WebSocket server
       this.wsServer = new WebSocketServer({
@@ -263,10 +279,19 @@ export class RealSGNWebSocketServer {
           // Dedup check
           if (message.ku?.cid && this.dedupSet.hasSeen(message.ku.cid)) {
             console.log(`🔄 Duplicate KU broadcast ignored: ${message.ku.cid}`);
+            metrics.net.dedup++;
+            // send ack anyway to signal receipt (optional)
+            try { this.sendMessage(ws, SGNProtocolMessage.kuAck(message.ku.cid, this.config.nodeId)); } catch {}
             return;
           }
           if (message.ku?.cid) this.dedupSet.markSeen(message.ku.cid);
           await this.handleKUBroadcast(ws, message);
+          // acknowledge
+          try { if (message.ku?.cid) this.sendMessage(ws, SGNProtocolMessage.kuAck(message.ku.cid, this.config.nodeId)); } catch {}
+          break;
+
+        case MESSAGE_TYPES.KU_ACK:
+          if (message.cid) metrics.net.acked++;
           break;
 
         case MESSAGE_TYPES.PING:
@@ -540,6 +565,10 @@ export class RealSGNWebSocketServer {
           sentCount++;
         }
       }
+    }
+
+    if (message?.ku?.cid) {
+      metrics.net.delivered += sentCount;
     }
 
     console.log(`📡 Broadcast sent to ${sentCount} peers`);
