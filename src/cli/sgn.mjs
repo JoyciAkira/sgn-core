@@ -46,6 +46,49 @@ async function main() {
       console.log(JSON.stringify(res));
       process.exit(res.ok ? 0 : 1);
     }
+    if (sub === 'edges') {
+      const edgeCmd = args[1];
+      if (edgeCmd === 'add') {
+        const srcIdx = args.indexOf('--src'); const dstIdx = args.indexOf('--dst'); const typeIdx = args.indexOf('--type');
+        if (srcIdx === -1 || dstIdx === -1 || typeIdx === -1) {
+          console.error('Usage: sgn ku edges add --src <CID> --dst <CID> --type <type>');
+          process.exit(1);
+        }
+        const src = args[srcIdx + 1]; const dst = args[dstIdx + 1]; const type = args[typeIdx + 1];
+        const { EdgesStore } = await import('../graph/edges-store.mjs');
+        const store = new EdgesStore(); store.initialize();
+        const changes = store.insert(src, dst, type);
+        console.log(changes ? `✅ Added edge: ${src} --${type}--> ${dst}` : `ℹ️ Edge already exists`);
+        process.exit(0);
+      }
+      if (edgeCmd === 'ls') {
+        const cid = args[2];
+        if (!cid) { console.error('Usage: sgn ku edges ls <CID>'); process.exit(1); }
+        const { EdgesStore } = await import('../graph/edges-store.mjs');
+        const store = new EdgesStore(); store.initialize();
+        const out = store.listOutgoing(cid); const inn = store.listIncoming(cid);
+        console.log(`Outgoing edges from ${cid}:`);
+        out.forEach(e => console.log(`  --${e.type}--> ${e.dst}`));
+        console.log(`Incoming edges to ${cid}:`);
+        inn.forEach(e => console.log(`  ${e.src} --${e.type}-->`));
+        process.exit(0);
+      }
+    }
+    if (sub === 'graph' && args[1] === 'print') {
+      const cid = args[2]; const depth = Number(args[4] || 2);
+      if (!cid) { console.error('Usage: sgn ku graph print <CID> [--depth N]'); process.exit(1); }
+      const { EdgesStore } = await import('../graph/edges-store.mjs');
+      const store = new EdgesStore(); store.initialize();
+      const vis = new Set([cid]); const q = [[cid,0]]; const out = [];
+      while (q.length) {
+        const [cur, d] = q.shift(); if (d === depth) continue;
+        const edges = store.listOutgoing(cur);
+        for (const e of edges) { out.push({ src: cur, dst: e.dst, type: e.type, depth: d }); if (!vis.has(e.dst)) { vis.add(e.dst); q.push([e.dst, d+1]); } }
+      }
+      console.log(`Graph from ${cid} (depth ${depth}):`);
+      out.forEach(e => console.log(`${'  '.repeat(e.depth)}${e.src} --${e.type}--> ${e.dst}`));
+      process.exit(0);
+    }
     if (sub === 'print' && args[1] === '--dag-json') {
       const file = args[2];
       const ku = JSON.parse(readFileSync(file, 'utf8'));

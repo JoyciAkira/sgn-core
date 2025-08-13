@@ -12,7 +12,7 @@
  * Uses Node.js built-in SQLite capabilities for real database operations.
  */
 
-import { writeFileSync, readFileSync, existsSync, mkdirSync } from 'fs';
+import { writeFileSync, readFileSync, existsSync, mkdirSync, statSync } from 'fs';
 import { join, dirname } from 'path';
 import { blake3Hash } from '../crypto/blake3-hasher.mjs';
 import { reputationManager } from '../reputation-manager.mjs';
@@ -150,17 +150,19 @@ export class RealSQLiteStorageTier {
    * Setup periodic persistence to file
    */
   setupPersistence() {
-    // Flush writes periodically
-    setInterval(() => {
-      this.flushToFile();
-    }, this.persistenceLayer.flushInterval);
-    
-    // Backup periodically
-    setInterval(() => {
-      this.createBackup();
-    }, 60000); // Every minute
-    
+    // track timers to allow graceful close
+    this._timers = this._timers || [];
+    const t1 = setInterval(() => { this.flushToFile(); }, this.persistenceLayer.flushInterval);
+    const t2 = setInterval(() => { this.createBackup(); }, 60000);
+    this._timers.push(t1, t2);
     console.log('⏰ Periodic persistence and backup scheduled');
+  }
+
+  close() {
+    try {
+      if (this._timers) for (const t of this._timers) { try { clearInterval(t) } catch {} }
+      this.flushToFile();
+    } catch {}
   }
   
   /**
@@ -548,6 +550,7 @@ export class RealSQLiteStorageTier {
       averageConfidence: this.calculateAverageConfidence(),
       hitRate: this.metrics.cacheHits / Math.max(this.metrics.cacheHits + this.metrics.cacheMisses, 1),
       dbPath: this.config.dbPath,
+      // fileSize best-effort; ignore errors
       fileSize: this.getFileSize(),
       isReal: true,
       persistenceQueueSize: this.persistenceLayer.writeQueue.length
@@ -574,11 +577,12 @@ export class RealSQLiteStorageTier {
   getFileSize() {
     try {
       if (existsSync(this.config.dbPath)) {
-        const stats = require('fs').statSync(this.config.dbPath);
+        const stats = statSync(this.config.dbPath);
         return stats.size;
       }
     } catch (error) {
-      console.warn(`Failed to get file size: ${error.message}`);
+      // best-effort: avoid noisy logs in ESM
+      // console.debug?.(`Failed to get file size: ${error.message}`);
     }
     return 0;
   }

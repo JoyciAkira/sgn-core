@@ -53,11 +53,14 @@ export class RealSQLiteStorageTier {
       // Create database connection
       this.db = new Database(this.dbPath);
       
-      // Enable WAL mode for better performance
-      this.db.pragma('journal_mode = WAL');
-      this.db.pragma('synchronous = NORMAL');
-      this.db.pragma('cache_size = 10000');
-      this.db.pragma('temp_store = MEMORY');
+      // Performance tuning
+      this.db.pragma('journal_mode = WAL');         // writes don't block reads
+      this.db.pragma('synchronous = NORMAL');       // less aggressive fsync, safe on WAL
+      this.db.pragma('temp_store = MEMORY');        // temp tables in RAM
+      this.db.pragma('mmap_size = 268435456');      // 256 MiB mmapped
+      this.db.pragma('cache_size = -131072');       // ~128 MiB page cache
+      this.db.pragma('wal_autocheckpoint = 1000');  // checkpoint every ~1000 WAL pages
+      this.db.pragma('busy_timeout = 3000');        // implicit backoff on lock
       
       // Create tables
       this.createTables();

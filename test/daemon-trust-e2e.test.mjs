@@ -1,3 +1,10 @@
+import { fileURLToPath } from 'node:url'
+import { dirname, resolve } from 'node:path'
+const __filename = fileURLToPath(import.meta.url)
+const __dirname  = dirname(__filename)
+const DAEMON = resolve(__dirname, '../src/daemon/daemon.mjs')
+const CWD    = resolve(__dirname, '..')
+
 import { test, before, after } from 'node:test'
 import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
@@ -38,12 +45,17 @@ let proc
 before(async () => {
   try { await fs.rm(DB) } catch {}
   try { await fs.rm('trust.json') } catch {}
-  proc = spawn(process.execPath, ['src/daemon/daemon.mjs'], {
+  proc = spawn(process.execPath, [DAEMON], {
     env: { ...process.env, SGN_HTTP_PORT: String(PORT), SGN_DB: DB },
-    stdio: 'inherit'
+    stdio: 'inherit',
+    cwd: CWD,
   })
-  // attesa soft di boot
-  await new Promise(r => setTimeout(r, 350))
+  // wait for health
+  const t0 = Date.now()
+  while (Date.now() - t0 < 4000) {
+    try { const r = await fetch(`${URL}/health`); if (r.ok) break } catch {}
+    await new Promise(r=>setTimeout(r,100))
+  }
 })
 
 after(async () => {

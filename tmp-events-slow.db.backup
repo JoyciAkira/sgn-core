@@ -1,0 +1,88 @@
+{
+  "knowledge_units": [
+    [
+      "bafyreibliy4k7e7rxsph53lruaqv5lm6o6gdat3qhouikbmu2v5vebchee",
+      {
+        "id": "bafyreibliy4k7e7rxsph53lruaqv5lm6o6gdat3qhouikbmu2v5vebchee",
+        "title": "slow",
+        "type": "ku.patch",
+        "description": "",
+        "solution": null,
+        "severity": "MEDIUM",
+        "confidence": 0.9,
+        "tags": "[]",
+        "affected_systems": "[]",
+        "discovered_by": null,
+        "origin_peer": null,
+        "hash": "bafyreibliy4k7e7rxsph53lruaqv5lm6o6gdat3qhouikbmu2v5vebchee",
+        "signature": null,
+        "created_at": 1755016032771,
+        "updated_at": 1755016032771,
+        "access_count": 0,
+        "last_accessed": null,
+        "reputation_score": 0.5
+      }
+    ]
+  ],
+  "ku_metadata": [
+    [
+      "bafyreibliy4k7e7rxsph53lruaqv5lm6o6gdat3qhouikbmu2v5vebchee",
+      {
+        "ku_id": "bafyreibliy4k7e7rxsph53lruaqv5lm6o6gdat3qhouikbmu2v5vebchee",
+        "tier": "warm",
+        "priority": 88,
+        "ttl": 86400000,
+        "created_at": 1755016032771,
+        "accessed_at": 1755016032771
+      }
+    ]
+  ],
+  "ku_indexes": [
+    [
+      "type_index",
+      [
+        [
+          "ku.patch",
+          [
+            "bafyreibliy4k7e7rxsph53lruaqv5lm6o6gdat3qhouikbmu2v5vebchee"
+          ]
+        ]
+      ]
+    ],
+    [
+      "severity_index",
+      [
+        [
+          "MEDIUM",
+          [
+            "bafyreibliy4k7e7rxsph53lruaqv5lm6o6gdat3qhouikbmu2v5vebchee"
+          ]
+        ]
+      ]
+    ],
+    [
+      "confidence_index",
+      [
+        [
+          0.9,
+          [
+            "bafyreibliy4k7e7rxsph53lruaqv5lm6o6gdat3qhouikbmu2v5vebchee"
+          ]
+        ]
+      ]
+    ],
+    [
+      "created_at_index",
+      []
+    ],
+    [
+      "tags_index",
+      []
+    ]
+  ],
+  "metadata": {
+    "version": "1.0",
+    "lastUpdate": 1755016034021,
+    "totalRecords": 1
+  }
+}

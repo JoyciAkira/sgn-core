@@ -1,3 +1,10 @@
+import { fileURLToPath } from 'node:url'
+import { dirname, resolve } from 'node:path'
+const __filename = fileURLToPath(import.meta.url)
+const __dirname  = dirname(__filename)
+const DAEMON = resolve(__dirname, '../src/daemon/daemon.mjs')
+const CWD    = resolve(__dirname, '..')
+
 import { test, before, after } from 'node:test'
 import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
@@ -18,9 +25,10 @@ async function waitForHealth(port, timeoutMs=3000, stepMs=100) {
 
 before(async () => {
   WebSocket = (await import('ws')).default
-  proc = spawn(process.execPath, ['src/daemon/daemon.mjs'], {
+  proc = spawn(process.execPath, [DAEMON], {
     env: { ...process.env, SGN_HTTP_PORT: String(PORT), SGN_DB: './tmp-events.db' },
-    stdio: 'inherit'
+    stdio: 'inherit',
+    cwd: CWD,
   })
   await waitForHealth(PORT, 4000, 100) // evita ECONNREFUSED
 })
@@ -31,13 +39,25 @@ after(async ()=>{
   }catch{}
 })
 
-async function jpost(p, body){
-  const r = await fetch(`http://localhost:${PORT}${p}`, {
-    method:'POST', headers:{'content-type':'application/json'},
-    body: JSON.stringify(body)
-  })
-  return { status: r.status, json: await r.json() }
+async function jpostRetry(p, body, tries=5) {
+  let d = 120;
+  for (let i = 0; i < tries; i++) {
+    try {
+      const r = await fetch(`http://localhost:${PORT}${p}`, {
+        method:'POST', headers:{'content-type':'application/json'},
+        body: JSON.stringify(body)
+      })
+      if (r.status === 200 || r.status === 403) return { status: r.status, json: await r.json() }
+    } catch {}
+    if (i < tries - 1) {
+      await new Promise(r => setTimeout(r, d));
+      d = Math.min(800, d * 1.6 + Math.random() * 40);
+    }
+  }
+  throw new Error('jpostRetry exhausted')
 }
+
+async function jpost(p, body) { return jpostRetry(p, body, 3) }
 
 test('events: receive ku then ack, metrics reflect it', async () => {
   const ws = new WebSocket(`ws://localhost:${PORT}/events`)

@@ -2,11 +2,11 @@
   "name": "sgn-vscode",
   "displayName": "SGN",
   "version": "0.0.1",
-  "engines": { "vscode": "^1.80.0" },
+  "engines": {
+    "vscode": "^1.80.0"
+  },
   "activationEvents": [
-    "onCommand:sgn.publishActiveFileAsKU",
-    "onCommand:sgn.verifyActiveFileKU",
-    "onCommand:sgn.openDaemonHealth"
+    "onStartupFinished"
   ],
   "contributes": {
     "configuration": {
@@ -17,13 +17,63 @@
           "type": "string",
           "default": "http://localhost:8787",
           "description": "URL of the SGN Daemon"
+        },
+        "sgn.eventsPath": {
+          "type": "string",
+          "default": "/events",
+          "description": "WebSocket events path"
+        },
+        "sgn.eventsBearer": {
+          "type": "string",
+          "default": "",
+          "description": "Bearer token for WebSocket authentication (optional)"
+        },
+        "sgn.showToasts": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show toast notifications for received KUs"
+        },
+        "sgn.openInDagJson": {
+          "type": "boolean",
+          "default": true,
+          "description": "Open KUs in DAG-JSON view by default"
+        },
+        "sgn.verifyOnOpen": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically verify KUs when opening"
         }
       }
     },
     "commands": [
-      { "command": "sgn.publishActiveFileAsKU", "title": "SGN: Publish Active KU" },
-      { "command": "sgn.verifyActiveFileKU", "title": "SGN: Verify Active KU" },
-      { "command": "sgn.openDaemonHealth", "title": "SGN: Open Daemon Health" }
+      {
+        "command": "sgn.publishActiveFileAsKU",
+        "title": "SGN: Publish Active KU"
+      },
+      {
+        "command": "sgn.verifyActiveFileKU",
+        "title": "SGN: Verify Active KU"
+      },
+      {
+        "command": "sgn.openDaemonHealth",
+        "title": "SGN: Open Daemon Health"
+      },
+      {
+        "command": "sgn.quickActions",
+        "title": "SGN: Quick Actions"
+      },
+      {
+        "command": "sgn.copyLatestKUCID",
+        "title": "SGN: Copy Latest KU CID"
+      },
+      {
+        "command": "sgn.verifyLatestKU",
+        "title": "SGN: Verify Latest KU"
+      },
+      {
+        "command": "sgn.openLatestKU",
+        "title": "SGN: Open Latest KU (dag-json)"
+      }
     ]
   },
   "main": "./dist/extension.js",
@@ -31,8 +81,11 @@
     "compile": "tsc -p ."
   },
   "devDependencies": {
-    "typescript": "^5.5.4",
-    "@types/vscode": "^1.80.0"
+    "@types/vscode": "^1.80.0",
+    "typescript": "^5.5.4"
+  },
+  "dependencies": {
+    "@types/ws": "^8.18.1",
+    "ws": "^8.18.3"
   }
 }
-

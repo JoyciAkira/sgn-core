@@ -4,8 +4,13 @@ import { RealSGNWebSocketServer } from '../src/network/real-websocket-server.mjs
 import WebSocket from 'ws';
 import { SGNProtocolMessage } from '../src/network/sgn-p2p-protocol.mjs';
 
+// Reduce console spam for CI/test runner stability
+if (process.env.CI || process.env.SGN_TEST_SILENT) {
+  console.log = () => {};
+}
+
 await test('outbox queues without peers and flushes when a peer connects', async () => {
-  const server = new RealSGNWebSocketServer({ port: 9091, host: '127.0.0.1', nodeId: 'server-A' });
+  const server = new RealSGNWebSocketServer({ port: 9091, host: '127.0.0.1', nodeId: 'server-A', outboxDbPath: './tmp-outbox-handshake.db' });
   await server.start();
 
   // Publish a KU broadcast before any peer is connected
