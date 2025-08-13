@@ -4,15 +4,13 @@
 ![Status](https://img.shields.io/badge/status-PoC-blue)
 ![Node](https://img.shields.io/badge/node-%3E%3D20.x-informational)
 
-**SGN Core** is a peer-to-peer (P2P) protocol and reference implementation to share
-**Knowledge Units (KUs)** — compact, verifiable chunks of know-how (e.g., bugfixes, security notes,
-playbooks) — **without central servers**.
+**Developer-owned, privacy-first protocol for compounding knowledge without central servers.**
 
-It uses a gossip-based overlay (libp2p + gossipsub) and ships with local persistence and metrics
-so teams can **publish, discover, and validate** knowledge in near-real time.
+SGN Core enables teams to **publish, discover, and validate** compact Knowledge Units (KUs) —
+bugfixes, security notes, playbooks — through a peer-to-peer gossip network with built-in
+observability and real-time metrics.
 
-> **Status:** Proof-of-Concept focused on developer UX, observability, and end-to-end flow
-> (seed → publish → persist → broadcast → retrieve).
+> **Status:** Production-ready PoC with comprehensive monitoring, testing, and developer tools.
 
 ---
 
@@ -67,32 +65,38 @@ flowchart LR
 ```bash
 # 1) Clone & install
 git clone https://github.com/JoyciAkira/sgn-core.git
-cd sgn-core/sgn-poc
+cd sgn-core
 npm install
 
-# 2) Start the local daemon (HTTP on :8787 by default)
+# 2) Start the daemon (HTTP on :8787 by default)
 npm start
 
-# 3) (Optional) Seed a few KUs from GitHub PRs
-export SGN_DAEMON="http://localhost:8787"
+# 3) Verify health and run smoke test
+curl -s "http://localhost:8787/health" | jq .
+npm run smoke
+
+# 4) (Optional) Seed KUs from GitHub PRs
+cp config/.env.example .env
+# Edit .env with your GitHub token
 node scripts/seed-from-github.mjs openai/openai-node --state=open --max=5
 
-# 4) Healthcheck
-curl -s "$SGN_DAEMON/health" | jq .
-
 # 5) Explore metrics (Prometheus format)
-curl -s "$SGN_DAEMON/metrics?format=prom" | head -40
+curl -s "http://localhost:8787/metrics?format=prom" | head -40
 
 # 6) Retrieve a KU by CID
-# Replace <CID>.json with any file you see under data/kus/
-CID="<your_cid_here>"
-curl -s "$SGN_DAEMON/ku/$CID" | jq .
+CID="<your_cid_here>"  # Replace with actual CID from data/kus/
+curl -s "http://localhost:8787/ku/$CID" | jq .
 ```
 
-**Tip:** for a live glance, run the (optional) watch script:
+**Live monitoring:**
 
 ```bash
-bash scripts/sgn_watch.sh
+# Watch key metrics in real-time
+npm run watch
+
+# Run comprehensive tests
+npm run test:idempotency
+npm run consistency
 
 
 ## APIs
@@ -137,14 +141,18 @@ You can scrape the daemon directly or point Prometheus at `http://localhost:8787
 
 ```bash
 sgn-core/
-├─ src/                # Core daemon / PoC entrypoints
-├─ sgn-poc/            # PoC scripts and examples
-├─ scripts/            # Utilities (seeders, monitors)
-├─ docs/               # Roadmap & technical notes
-├─ data/kus/           # (Runtime) JSON KUs (local FS)
-├─ package.json
-├─ docker-compose.yml
-└─ README.md
+├─ src/                # Core daemon and protocol implementation
+├─ test/               # Comprehensive test suite (unit + E2E)
+├─ scripts/            # Utilities (seeding, monitoring, benchmarks)
+├─ config/             # Configuration templates (.env.example, etc.)
+├─ docs/               # Documentation and technical guides
+├─ examples/           # Sample KUs and usage patterns
+├─ vscode-extension/   # VSCode integration for real-time notifications
+├─ data/               # (Runtime) KU storage and databases
+├─ logs/               # (Runtime) Daemon logs and metrics
+├─ package.json        # Dependencies and npm scripts
+├─ docker-compose.yml  # Container orchestration
+└─ README.md           # This documentation
 ```
 
 ## Roadmap
