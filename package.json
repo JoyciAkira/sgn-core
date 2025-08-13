@@ -1,21 +1,38 @@
 {
-  "name": "sgn-poc",
-  "version": "1.0.0",
-  "description": "",
+  "name": "sgn-core",
+  "version": "0.1.0-alpha.4",
+  "description": "SGN Core — a peer-to-peer protocol to share Knowledge Units (KUs) between developers without central servers",
   "main": "index.js",
   "scripts": {
     "start": "node start.mjs",
     "demo": "node src/sgn-poc.mjs",
     "sgn": "node src/cli/sgn.mjs",
     "test": "node --test ./test/*.mjs",
+    "test:e2e:serial": "node --test --test-concurrency=1 ./test/*e2e*.mjs",
     "daemon:start": "SGN_DB=./sgn.db SGN_HTTP_PORT=8787 node src/daemon/daemon.mjs",
     "daemon:health": "curl -s http://localhost:8787/health",
+    "trust": "node src/cli/trust-cli.mjs",
+    "smoke": "bash scripts/sgn_smoke.sh",
+    "test:idempotency": "bash scripts/test_idempotency.sh",
+    "watch": "bash scripts/sgn_watch.sh",
+    "consistency": "curl -s http://localhost:8787/admin/consistency | jq .",
+    "drain": "curl -X POST -s http://localhost:8787/admin/drain | jq .",
     "md:lint": "npx markdownlint \"**/*.md\" --ignore node_modules --ignore dist --ignore .git --ignore \"**/pkg/**\" --ignore \"**/generated/**\"",
     "md:fix": "npx markdownlint \"**/*.md\" --fix --ignore node_modules --ignore dist --ignore .git --ignore \"**/pkg/**\" --ignore \"**/generated/**\""
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "p2p",
+    "libp2p",
+    "gossipsub",
+    "nodejs",
+    "distributed-systems",
+    "prometheus",
+    "knowledge-graph",
+    "developer-tools",
+    "observability"
+  ],
+  "author": "Socrate Global Network",
+  "license": "MIT",
   "type": "module",
   "dependencies": {
     "@chainsafe/libp2p-gossipsub": "^14.1.1",
@@ -41,6 +58,5 @@
   "devDependencies": {
     "fast-check": "^4.2.0",
     "markdownlint-cli": "^0.45.0"
-  }
   }
 }
